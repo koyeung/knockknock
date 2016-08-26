@@ -16,6 +16,8 @@ import glob
 import file
 import utils
 
+from Carbon import File
+
 #plugin framework import
 from yapsy.IPlugin import IPlugin
 
@@ -173,11 +175,15 @@ class scan(IPlugin):
 					binary = programArguments[0]
 
 					#skip files that aren't found
-					# ->e.g firmwaresyncd
+					# ->will try 'which' to resolve things like 'bash', etc
 					if not os.path.isfile(binary):
 
-						#skip
-						continue
+						#try which
+						binary = utils.which(binary)
+						if not binary:
+
+							#skip
+							continue
 
 				#also check for 'Program' key
 				# ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
@@ -187,11 +193,15 @@ class scan(IPlugin):
 					binary = plistData['Program']
 
 					#skip files that aren't found
-					# ->e.g firmwaresyncd
-					if not os.path.isfile(plistData['Program']):
+					# ->will try 'which' to resolve things like 'bash', etc
+					if not os.path.isfile(binary):
 
-						#skip
-						continue
+						#try which
+						binary = utils.which(binary)
+						if not binary:
+
+							#skip
+							continue
 
 				#save extracted launch daemon/agent binary
 				if binary:

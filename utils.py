@@ -1167,9 +1167,27 @@ def convertElapsedToAbs(elapsedTime):
 		#add hours
 		absoluteTime += int(timeComponent[-4]) * 60 * 60 * 24
 
-
-	#print 'TIME (ABS): %d' % absoluteTime
-
 	return absoluteTime
 
+#finds an executable (a la 'which')
+# -> based on: http://nullege.com/codes/search/distutils.spawn.find_executable
+def which(binary):
+
+	#split paths
+	paths = os.environ['PATH'].split(os.pathsep)
+
+ 	#iterate over all paths
+ 	# ->build path and see if exists
+ 	for path in paths:
+        
+        #build path to candidate
+		candidate = os.path.join(path, binary)
+        
+		#does it exist?
+		if os.path.isfile(candidate):
+            
+			#happy
+			return candidate
+    
+	return None
 
