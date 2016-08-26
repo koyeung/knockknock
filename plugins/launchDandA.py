@@ -16,8 +16,6 @@ import glob
 import file
 import utils
 
-from Carbon import File
-
 #plugin framework import
 from yapsy.IPlugin import IPlugin
 
