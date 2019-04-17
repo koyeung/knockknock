@@ -149,7 +149,7 @@ def logMessage(mode, msg, shouldSupress=None):
 	if (MODE_WARN == mode or MODE_ERROR == mode) and not shouldSupress:
 
 		#display it
-		print('%s: %s' % (mode, msg))
+		print >> sys.stderr, '%s: %s' % (mode, msg)
 
 	#in verbose mode
 	# ->always display everything
