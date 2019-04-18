@@ -235,6 +235,7 @@ def initKK():
 		#import
 		import argparse
 
+
 	#handle exception
 	# ->bail w/ error msg
 	except ImportError:
@@ -252,6 +253,8 @@ def initKK():
 
 	#now can import 3rd party lib
 	# ->yapsy
+        import logging
+        logging.basicConfig(level=logging.ERROR)
 	from yapsy.PluginManager import PluginManager
 
 	#parse options/args
