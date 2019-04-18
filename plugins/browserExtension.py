@@ -255,8 +255,12 @@ class scan(IPlugin):
 						#skip/try next
 						continue
 
-				#the list of extensions are stored in the 'settings' key
-				extensions = preferences['extensions']['settings']
+				# pref file just has the list of ids,
+                                # everything else we might want is in
+                                # os.path.dirname(chromePreferenceFile) + '/Extensions/' + id + version + manifest.json
+                                # manifest has name, description
+
+				extensions = preferences['extensions']['install_signature']['ids']
 
 				#scan all extensions
 				# ->skip ones that are disabled, white listed, etc
@@ -267,68 +271,23 @@ class scan(IPlugin):
 
 					#save key
 					extensionInfo['id'] = extensionKey
+                                        extensionInfo['path'] = os.path.dirname(chromePreferenceFile) + '/Extensions/' + extensionInfo['id']
 
-					#get extension dictionary
-					currentExtension = extensions[extensionKey]
+                                        extdir = os.listdir( extensionInfo['path'] )
+                                        for verdir in extdir:
+                                                manpath = extensionInfo['path'] + '/' + verdir + '/manifest.json'
 
-					#skip extensions if they are disabled
-					# ->'state' set to 0 means disabled
-					if 'state' in currentExtension and not currentExtension['state']:
+                                                with open( manpath, 'r' ) as file:
+                                                        manifest = json.loads(file.read())
+                                                        if not manifest:
+                                                                continue;
 
-						#skip
-						continue
+                                                extensionInfo['path'] = manpath
+                                                extensionInfo['name'] = manifest['name']
+                                                extensionInfo['description'] = manifest['description']
 
-					#skip extensions that are installed by default
-					# ->assuming these are legit/ok
-					if 'was_installed_by_default' in currentExtension and currentExtension['was_installed_by_default']:
-
-						#skip
-						continue
-
-					#extract manifest
-					# ->contains name, description, etc
-					if 'manifest' in currentExtension:
-
-						manifest = currentExtension['manifest']
-						if manifest:
-
-							#extract name
-							if 'name' in manifest:
-
-								#name
-								extensionInfo['name'] = manifest['name']
-
-							#extract description
-							if 'description' in manifest:
-
-								#description
-								extensionInfo['description'] = manifest['description']
-
-					#extract path
-					if 'path' in currentExtension:
-
-						#sometimes path is (already) full path
-						# e.g. /Applications/Google Chrome.app/.../Google Chrome Framework.framework/Resources/<blah>
-						if os.path.exists(currentExtension['path']):
-
-							#save
-							extensionInfo['path'] = currentExtension['path']
-
-						#generally though the full path has to be built
-						else:
-
-							#build full path
-							extensionInfo['path'] = os.path.dirname(chromePreferenceFile) + '/Extensions/' + currentExtension['path']
-
-						#ignore path's that don't exist
-						# ->uninstallers may not clean up things correctly
-						if not os.path.exists(extensionInfo['path']):
-
-							#skip
-							continue
-
-					#create and append
-					results.append(extension.Extension(extensionInfo))
+                                                #create and append
+                                                results.append(extension.Extension(extensionInfo))
 
 			#ignore exceptions
 			except Exception, e:
