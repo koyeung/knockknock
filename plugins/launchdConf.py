@@ -6,6 +6,8 @@ launchd.conf
     the /etc/launchd.conf file contains commands that are that are executed at boot by launchctl
 
     this plugin (very basically) parses this file, extacting all such commands
+
+    And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
 '''
 
 import os
