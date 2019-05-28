@@ -23,7 +23,7 @@ import utils
 from yapsy.IPlugin import IPlugin
 
 #base directories for startup items
-STARTUP_ITEM_BASE_DIRECTORIES = ['/System/Library/StartupItems/', '/Library/StartupItems/']
+STARTUP_ITEM_BASE_DIRECTORIES = ['/System/Library/StartupItems/', '/Library/StartupItems/', '/Library/Application Support/JAMF/ManagementFrameworkScripts/']
 
 #for output, item name
 STARTUP_ITEM_NAME = 'Startup Items'
