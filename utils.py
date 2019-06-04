@@ -954,13 +954,6 @@ def getProcessList():
 		#process's full path + args
 		fullPath = processesInfo[pid]['path']
 
-		#if process doesn't have any args
-		# ->no processing needed
-		if fullPath.endswith('/' + name):
-
-			#skip
-			continue
-
 		#wrap
 		try:
 
