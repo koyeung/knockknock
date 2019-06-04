@@ -271,11 +271,11 @@ class scan(IPlugin):
 
 					#save key
 					extensionInfo['id'] = extensionKey
-                                        extensionInfo['path'] = os.path.dirname(chromePreferenceFile) + '/Extensions/' + extensionInfo['id']
+                                        extensionPath = os.path.dirname(chromePreferenceFile) + '/Extensions/' + extensionInfo['id']
 
-                                        extdir = os.listdir( extensionInfo['path'] )
+                                        extdir = os.listdir( extensionPath )
                                         for verdir in extdir:
-                                                manpath = extensionInfo['path'] + '/' + verdir + '/manifest.json'
+                                                manpath = extensionPath + '/' + verdir + '/manifest.json'
 
                                                 with open( manpath, 'r' ) as file:
                                                         manifest = json.loads(file.read())
