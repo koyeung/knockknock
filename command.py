@@ -27,7 +27,7 @@ class Command():
 	def __repr__(self):
 
 		#return obj as JSON string
-		return json.dumps(self.__dict__)
+		return json.dumps(self.__dict__, indent=4)
 
 	#for normal output
 	def prettyPrint(self):
