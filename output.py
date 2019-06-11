@@ -42,7 +42,7 @@ def formatResults(results, asJSON):
 	if asJSON:
 
 		#will generate JSON
-		formattedResults = json.dumps(results, cls=jsonEncoder)
+		formattedResults = json.dumps(results, cls=jsonEncoder, indent=4)
 
 	#pretty print the output for stdout
 	else:
