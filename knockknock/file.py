@@ -1,189 +1,198 @@
-__author__ = 'patrick'
+__author__ = "patrick"
 
 import os
 import json
 
-#project imports
+# project imports
 import utils
 import whitelist
 
-class File():
 
-	#init method
-	# ->init instance variables, hash file, etc
-	def __init__(self, path, plist=None, parent=None):
+class File:
 
-		#init path for bundle
-		self.bundle = None
+    # init method
+    # ->init instance variables, hash file, etc
+    def __init__(self, path, plist=None, parent=None):
 
-		#if its a directory (e.g. an app bundle)
-		# ->get binary (from app's Info.plist)
-		if os.path.isdir(path):
+        # init path for bundle
+        self.bundle = None
 
-			#save bundle path
-			self.bundle = path
+        # if its a directory (e.g. an app bundle)
+        # ->get binary (from app's Info.plist)
+        if os.path.isdir(path):
 
-			#get path
-			self.path = utils.getBinaryFromBundle(path)
+            # save bundle path
+            self.bundle = path
 
-			#if binary could not be found
-			# ->default to 'unknown'
-			if not self.path:
+            # get path
+            self.path = utils.getBinaryFromBundle(path)
 
-				#just set to something...
-				self.path = '<unknown>'
+            # if binary could not be found
+            # ->default to 'unknown'
+            if not self.path:
 
-		#path is to file
-		# ->just save into class var
-		else:
+                # just set to something...
+                self.path = "<unknown>"
 
-			#save
-			self.path = path
+        # path is to file
+        # ->just save into class var
+        else:
 
-		#convert file path to utf-8 if needed
-		if isinstance(self.path, str):
+            # save
+            self.path = path
 
-			#convert
-			self.path = self.path.encode('utf-8')
+        # convert file path to utf-8 if needed
+        if isinstance(self.path, str):
 
-		#save plist
-		# ->this will be set for launch daemons/agents, inserted dylibs, etc
-		self.plist = plist
+            # convert
+            self.path = self.path.encode("utf-8")
 
-		#compute/save name
-		self.name = os.path.split(self.path)[1]
+        # save plist
+        # ->this will be set for launch daemons/agents, inserted dylibs, etc
+        self.plist = plist
 
-		#compute/save hash
-		self.hash = utils.md5sum(self.path)
+        # compute/save name
+        self.name = os.path.split(self.path)[1]
 
-		#init whitelist flag
-		self.isWhitelisted = False
+        # compute/save hash
+        self.hash = utils.md5sum(self.path)
 
-		#check if its whitelisted
-		# ->path is key
-		if self.path in whitelist.whitelistedFiles:
+        # init whitelist flag
+        self.isWhitelisted = False
 
-			#check if hash is in white list
-		 	self.isWhitelisted = (self.hash in whitelist.whitelistedFiles[self.path])
+        # check if its whitelisted
+        # ->path is key
+        if self.path in whitelist.whitelistedFiles:
 
-		#init
-		self.signatureStatus = None
+            # check if hash is in white list
+            self.isWhitelisted = self.hash in whitelist.whitelistedFiles[self.path]
 
-		#init signing authorities
-		self.signingAuthorities = None
+        # init
+        self.signatureStatus = None
 
-		#init apple flag
-		self.signedByApple = False
+        # init signing authorities
+        self.signingAuthorities = None
 
-		#check file is signed and if so, by apple
-		# note: sets class's signatureStatus/signingAuthorities & signedByApple class vars
-		self.initSigningStatus()
+        # init apple flag
+        self.signedByApple = False
 
-		#init VT ratio
-		self.vtRatio = None
+        # check file is signed and if so, by apple
+        # note: sets class's signatureStatus/signingAuthorities & signedByApple class vars
+        self.initSigningStatus()
 
-		return
+        # init VT ratio
+        self.vtRatio = None
 
-	#return file's path
-	def path(self):
+        return
 
-		#path
-		return self.path
+    # return file's path
+    def path(self):
 
-	#return file's name
-	def name(self):
+        # path
+        return self.path
 
-		#name
-		return self.name
+    # return file's name
+    def name(self):
 
-	#return hash
-	def hash(self):
+        # name
+        return self.name
 
-		#hash
-		return self.hash
+    # return hash
+    def hash(self):
 
-	#for normal output
-	def prettyPrint(self):
+        # hash
+        return self.hash
 
-		#certificate info
-		signedMsg = ''
+    # for normal output
+    def prettyPrint(self):
 
-		#VT ratio
-		vtRatio = ''
+        # certificate info
+        signedMsg = ""
 
-		#handle case where hash was unable to be generated
-		# ->file wasn't found/couldn't be accessed
-		if not self.hash:
+        # VT ratio
+        vtRatio = ""
 
-			#set some default
-			self.hash = 'unknown'
+        # handle case where hash was unable to be generated
+        # ->file wasn't found/couldn't be accessed
+        if not self.hash:
 
-		#handle when file is signed
-		if 0 == self.signatureStatus:
+            # set some default
+            self.hash = "unknown"
 
-			#yup
-			signedMsg = 'yes'
+        # handle when file is signed
+        if 0 == self.signatureStatus:
 
-			#add signing auth's
-			if len(self.signingAuthorities):
+            # yup
+            signedMsg = "yes"
 
-				#add
-				signedMsg += ' (%s)' % self.signingAuthorities
+            # add signing auth's
+            if len(self.signingAuthorities):
 
-		#handle when file is not signed
-		elif self.signatureStatus:
+                # add
+                signedMsg += " (%s)" % self.signingAuthorities
 
-			#no
-			signedMsg = 'no (%d)' % self.signatureStatus
+        # handle when file is not signed
+        elif self.signatureStatus:
 
-		#error case
-		# ->couldn't check signature
-		else:
+            # no
+            signedMsg = "no (%d)" % self.signatureStatus
 
-			#unknown
-			signedMsg = 'unknown'
+        # error case
+        # ->couldn't check signature
+        else:
 
-		#non-plisted files
-		if not self.plist:
+            # unknown
+            signedMsg = "unknown"
 
-			return '\n%s\n path: %s\n hash: %s\n signed? %s\n VT ratio: %s\n' % (self.name, self.path, self.hash, signedMsg, self.vtRatio)
+        # non-plisted files
+        if not self.plist:
 
-		#plisted files
-		else:
+            return "\n%s\n path: %s\n hash: %s\n signed? %s\n VT ratio: %s\n" % (
+                self.name,
+                self.path,
+                self.hash,
+                signedMsg,
+                self.vtRatio,
+            )
 
-			return '\n%s\n path: %s\n plist: %s\n hash: %s \n signed? %s\n VT ratio: %s\n' % (self.name, self.path, self.plist, self.hash, signedMsg, self.vtRatio)
+        # plisted files
+        else:
 
+            return (
+                "\n%s\n path: %s\n plist: %s\n hash: %s \n signed? %s\n VT ratio: %s\n"
+                % (self.name, self.path, self.plist, self.hash, signedMsg, self.vtRatio)
+            )
 
-	#determine if a file (or bundle) is signed, and if so, by Apple
-	def initSigningStatus(self):
+    # determine if a file (or bundle) is signed, and if so, by Apple
+    def initSigningStatus(self):
 
-		#signing info
-		signingInfo = {}
+        # signing info
+        signingInfo = {}
 
-		#default path to check as file's path
-		path = self.path
+        # default path to check as file's path
+        path = self.path
 
-		#however for kexts, use their bundle
-		# ->this avoids issue with where errSecCSInfoPlistFailed is returned when the kext's binary is checked
-		if self.bundle and utils.isKext(self.bundle):
+        # however for kexts, use their bundle
+        # ->this avoids issue with where errSecCSInfoPlistFailed is returned when the kext's binary is checked
+        if self.bundle and utils.isKext(self.bundle):
 
-			#set path to bundle
-			path = self.bundle
+            # set path to bundle
+            path = self.bundle
 
-		#check the signature
-		(status, signingInfo) = utils.checkSignature(path, self.bundle)
+        # check the signature
+        (status, signingInfo) = utils.checkSignature(path, self.bundle)
 
-		#on success
-		# ->save into class var
-		if 0 == status:
+        # on success
+        # ->save into class var
+        if 0 == status:
 
-			#save sig status
-			self.signatureStatus = signingInfo['status']
+            # save sig status
+            self.signatureStatus = signingInfo["status"]
 
-			#save apple flag
-			self.signedByApple = signingInfo['isApple']
+            # save apple flag
+            self.signedByApple = signingInfo["isApple"]
 
-			#save authorities
-			self.signingAuthorities = signingInfo['authorities']
+            # save authorities
+            self.signingAuthorities = signingInfo["authorities"]
 
-		return
+        return

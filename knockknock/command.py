@@ -1,51 +1,51 @@
-__author__ = 'patrick'
+__author__ = "patrick"
 
 import json
 
-#project imports
+# project imports
 import whitelist
 
-class Command():
 
-	#init method
-	# ->save command and set white list flag
-	def __init__(self, command, file=None):
+class Command:
 
-		#save command
-		self.command = command
+    # init method
+    # ->save command and set white list flag
+    def __init__(self, command, file=None):
 
-		#save file
-		self.file = file
+        # save command
+        self.command = command
 
-		#init whitelist flag
-		# ->simply set to True if command is list of whitelisted commands
-		self.isWhitelisted = (self.command in whitelist.whitelistedCommands)
+        # save file
+        self.file = file
 
-		return
+        # init whitelist flag
+        # ->simply set to True if command is list of whitelisted commands
+        self.isWhitelisted = self.command in whitelist.whitelistedCommands
 
-	#for json output
-	def __repr__(self):
+        return
 
-		#return obj as JSON string
-		return json.dumps(self.__dict__, indent=4)
+    # for json output
+    def __repr__(self):
 
-	#for normal output
-	def prettyPrint(self):
+        # return obj as JSON string
+        return json.dumps(self.__dict__, indent=4)
 
-		#pretty-printed string
-		string = ''
+    # for normal output
+    def prettyPrint(self):
 
-		#when cmd has file
-		if self.file:
+        # pretty-printed string
+        string = ""
 
-			#init
-			string = '\n%s\n file: %s\n' % (self.command, self.file)
+        # when cmd has file
+        if self.file:
 
-		#no file
-		else:
+            # init
+            string = "\n%s\n file: %s\n" % (self.command, self.file)
 
-			#init
-			string = '\n%s\n' % (self.command)
+        # no file
+        else:
 
+            # init
+            string = "\n%s\n" % (self.command)
 
-		return string
+        return string
