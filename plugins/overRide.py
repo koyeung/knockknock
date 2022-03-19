@@ -175,7 +175,7 @@ class scan(IPlugin):
 						continue
 
 			#ignore exceptions
-			except Exception, e:
+			except Exception as e:
 
 				#print e
 

@@ -124,10 +124,10 @@ def knocknock():
 		formattedResults = output.formatResults(results, args.json)
 
 		#show em
-		print formattedResults.encode('ascii', 'xmlcharrefreplace')
+		print(formattedResults.encode('ascii', 'xmlcharrefreplace'))
 
 	#top level exception handler
-	except Exception, e:
+	except Exception as e:
 
 		#dbg msg
 		utils.logMessage(utils.MODE_ERROR, '\n EXCEPTION, %s() threw: %s' % (sys._getframe().f_code.co_name, e))
@@ -221,7 +221,7 @@ def initKK():
 
 		#err msg
 		# ->as logging isn't init'd yet, just print directly
-		print('ERROR: KnockKnock requires python 2.7+ (found: %s)' % (pythonVersion))
+		print(('ERROR: KnockKnock requires python 2.7+ (found: %s)' % (pythonVersion)))
 
 		#bail
 		return False
@@ -392,7 +392,7 @@ def listPlugins():
 
 		#dbg msg
 		# ->always use print, since -v might not have been used
-		print '%s -> %s' % (os.path.split(plugin.path)[1], plugin.name)
+		print('%s -> %s' % (os.path.split(plugin.path)[1], plugin.name))
 
 	return
 

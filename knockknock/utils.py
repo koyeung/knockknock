@@ -122,7 +122,7 @@ def loadObjcBindings():
 		loadOK = True
 
 	#imports not found
-	except ImportError, e:
+	except ImportError as e:
 
 		#set flag
 		# ->load not OK
@@ -149,14 +149,14 @@ def logMessage(mode, msg, shouldSupress=None):
 	if (MODE_WARN == mode or MODE_ERROR == mode) and not shouldSupress:
 
 		#display it
-		print >> sys.stderr, '%s: %s' % (mode, msg)
+		print('%s: %s' % (mode, msg), file=sys.stderr)
 
 	#in verbose mode
 	# ->always display everything
 	elif verbose:
 
 		#display it
-		print('%s: %s' % (mode, msg))
+		print(('%s: %s' % (mode, msg)))
 
 	return
 
@@ -379,7 +379,7 @@ def getUsers():
 			users.append(result.recordName())
 
 	#ignore exceptions
-	except Exception, e:
+	except Exception as e:
 
 		#ignore
 		pass
@@ -414,7 +414,7 @@ def isKext(path):
 			bundleIsKext = (packageType.upper() == 'KEXT')
 
 	#ignore exceptions
-	except Exception, e:
+	except Exception as e:
 
 		#print e
 
@@ -813,7 +813,7 @@ def getInstalledApps():
 		installedApps = systemProfileInfo[0]['_items']
 
 	#exception
-	except Exception, e:
+	except Exception as e:
 
 		#reset
 		installedApps = None
@@ -851,10 +851,10 @@ def md5sum(filename):
 				d.update(buf)
 
 			#grab hash
-			digest = unicode(d.hexdigest())
+			digest = str(d.hexdigest())
 
 	#exception
-	except Exception, e:
+	except Exception as e:
 
 		#reset
 		digest = None

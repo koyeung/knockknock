@@ -208,7 +208,7 @@ class scan(IPlugin):
 					autoRunBins.append([binary, plist])
 
 			#ignore exceptions
-			except Exception, e:
+			except Exception as e:
 
 				#ignore
 				pass
@@ -324,7 +324,7 @@ class scan(IPlugin):
 						self.overriddenItems[overrideItem] = plistData[overrideItem]['Disabled']
 
 			#ignore exceptions
-			except Exception, e:
+			except Exception as e:
 
 				#skip
 				continue

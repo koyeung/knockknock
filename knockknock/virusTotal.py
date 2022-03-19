@@ -6,8 +6,8 @@
 import os
 import sys
 import json
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 #project imports
 import file
@@ -140,10 +140,10 @@ def queryVT(items):
 	try:
 
 		#build request
-		request = urllib2.Request(VT_URL+VT_API_KEY, json.dumps(items, indent=4), headers=requestHeaders)
+		request = urllib.request.Request(VT_URL+VT_API_KEY, json.dumps(items, indent=4), headers=requestHeaders)
 
 		#make request
-		response = urllib2.urlopen(request)
+		response = urllib.request.urlopen(request)
 
 		#convert response to JSON
 		vtResponse = json.loads(response.read())
@@ -160,7 +160,7 @@ def queryVT(items):
 
 	#exceptions
 	# ->ignore (likely network related)
-	except Exception, e:
+	except Exception as e:
 
 		#dbg msg
 		utils.logMessage(utils.MODE_ERROR, '\n EXCEPTION, %s() threw: %s' % (sys._getframe().f_code.co_name, e))

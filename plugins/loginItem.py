@@ -88,7 +88,7 @@ class scan(IPlugin):
 							results['items'].append(file.File(loginItem))
 
 					#ignore exceptions
-					except Exception, e:
+					except Exception as e:
 
 						#skip
 						continue

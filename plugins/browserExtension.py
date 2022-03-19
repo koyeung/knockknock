@@ -142,15 +142,15 @@ class scan(IPlugin):
 
 				#ignore exceptions
 				# ->just want to try next browser
-				except Exception, e:
+				except Exception as e:
 
 					#ignore
 					pass
 
 		#ignore exceptions
-		except Exception, e:
+		except Exception as e:
 
-			print e
+			print(e)
 			traceback.print_exc()
 
 			#ignore
@@ -216,10 +216,10 @@ class scan(IPlugin):
 					results.append(extension.Extension(extensionInfo))
 
 			#ignore exceptions
-			except Exception, e:
+			except Exception as e:
 
 				#leave in err msg (for now)
-				print e
+				print(e)
 				traceback.print_exc()
 
 
@@ -290,10 +290,10 @@ class scan(IPlugin):
                                                 results.append(extension.Extension(extensionInfo))
 
 			#ignore exceptions
-			except Exception, e:
+			except Exception as e:
 
 				#leave in err msg (for now)
-				print e
+				print(e)
 				traceback.print_exc()
 
 				#skip/try next
@@ -437,10 +437,10 @@ class scan(IPlugin):
 						results.append(extension.Extension(extensionInfo))
 
 					#ignore exceptions
-					except Exception, e:
+					except Exception as e:
 
 						#leave in err msg (for now)
-						print e
+						print(e)
 						traceback.print_exc()
 
 						#skip/try next

@@ -218,7 +218,7 @@ def scanPlists(plists, key, isLoaded=False):
 					results.append(file.File(loadedPlist[key]['__XPC_DYLD_INSERT_LIBRARIES'], plistPath))
 
 		#ignore exceptions
-		except Exception, e:
+		except Exception as e:
 
 			#ignore
 			pass

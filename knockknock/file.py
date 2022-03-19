@@ -41,7 +41,7 @@ class File():
 			self.path = path
 
 		#convert file path to utf-8 if needed
-		if isinstance(self.path, unicode):
+		if isinstance(self.path, str):
 
 			#convert
 			self.path = self.path.encode('utf-8')
