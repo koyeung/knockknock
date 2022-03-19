@@ -1,0 +1,9 @@
+# Mark commits for strictly formatting/style changes.
+# Commit hash added here could be ignored on `git blame`.
+# See also:
+# https://git-scm.com/docs/git-config#Documentation/git-config.txt-blameignoreRevsFile
+
+# Example entries:
+#
+# <full commit hash>  # initial black-format 
+

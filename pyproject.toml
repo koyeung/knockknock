@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "knockknock"
+version = "0.1.0"
+description = "Knock Knock - who's there?"
+authors = ["Your Name <you@example.com>"]
+license = "LICENSE"
+
+[tool.poetry.scripts]
+knockknock = 'knockknock.knockknock:knocknock'
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Yapsy = "^1.12.2"
+pyobjc = "^8.4.1"
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+ipython = "^8.1.1"
+pip-audit = "^2.1.0"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+
+# use same line length as black
+line_length = 88
+
