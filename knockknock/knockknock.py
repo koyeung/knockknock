@@ -3,18 +3,19 @@
 # KnockKnock by Patrick Wardle is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
+import json
 import os
 import sys
-import json
 import traceback
+
+import command
 
 # project imports
 import file
-import utils
 import output
-import command
-import whitelist
+import utils
 import virusTotal
+import whitelist
 
 # directory containing plugins
 PLUGIN_DIR = "plugins/"

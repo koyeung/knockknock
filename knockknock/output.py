@@ -1,9 +1,11 @@
 import json
 
-# project imports
-import file
 import command
 import extension
+
+# project imports
+import file
+
 
 # json encoder
 class jsonEncoder(json.JSONEncoder):

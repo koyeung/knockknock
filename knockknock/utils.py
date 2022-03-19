@@ -1,18 +1,18 @@
 __author__ = "patrick"
 
-import os
-import re
-import sys
-import glob
-import shlex
 import ctypes
+import ctypes.util
 import fnmatch
+import glob
 import hashlib
+import os
 import platform
 import plistlib
-import traceback
+import re
+import shlex
 import subprocess
-import ctypes.util
+import sys
+import traceback
 
 # support OS X version (major)
 SUPPORTED_OS_VERSION = 10
@@ -116,8 +116,8 @@ def loadObjcBindings():
     try:
 
         # attempt imports
-        import objc
         import Foundation
+        import objc
 
         # set flag
         # ->load OK

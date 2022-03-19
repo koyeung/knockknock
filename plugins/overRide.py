@@ -6,8 +6,8 @@ __author__ = "patrick w"
 	this plugin scans the OS's override directory and parses files to overridden items set for auto execution
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

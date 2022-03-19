@@ -8,10 +8,11 @@ __author__ = "patrick w"
 
 import os
 
+import command
+
 # project imports
 import file
 import utils
-import command
 
 # plugin framwork import
 from yapsy.IPlugin import IPlugin

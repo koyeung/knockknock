@@ -1,7 +1,7 @@
 __author__ = "patrick"
 
-import os
 import json
+import os
 
 # project imports
 import utils

@@ -9,8 +9,8 @@ spotlight importer
 
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

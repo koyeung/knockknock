@@ -9,8 +9,8 @@ unclassified items
     this plugin dumps the process list and attempts to list all binaries that are running, apparently automatically so..
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

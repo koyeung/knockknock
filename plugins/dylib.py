@@ -26,8 +26,8 @@ dylibs (loaded via DYLD_INSERT_LIBRARIES)
 # 	  </dict>
 # /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -v -f /Applications/ApplicationName.app
 
-import os
 import glob
+import os
 
 # project imports
 import file

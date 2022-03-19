@@ -9,8 +9,8 @@ launch daemons and agents
     all auto-launched daemons/agents
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

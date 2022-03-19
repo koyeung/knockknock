@@ -12,9 +12,10 @@ launchd.conf
 
 import os
 
+import command
+
 # project imports
 import utils
-import command
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin

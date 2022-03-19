@@ -9,8 +9,8 @@ authorization plugin
 
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

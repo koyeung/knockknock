@@ -12,8 +12,8 @@ startup items
     this plugin examines files within the OS's startup items directories to find any startup items
 """
 
-import os
 import glob
+import os
 
 # project imports
 import file

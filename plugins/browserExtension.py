@@ -9,15 +9,16 @@ browser extensions
 
 """
 
-import os
 import glob
 import json
+import os
 import traceback
+
+import extension
+import LaunchServices
 
 # project imports
 import utils
-import extension
-import LaunchServices
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
