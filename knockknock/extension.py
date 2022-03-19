@@ -50,8 +50,8 @@ class Extension():
 			self.description = extensionInfo['description']
 
 		#init whitelist flag
-                whitelistedSearch = self.extensionID if self.extensionID != None else self.path
-                self.isWhitelisted = (whitelistedSearch in whitelist.whitelistedExtensions)
+		whitelistedSearch = self.extensionID if self.extensionID != None else self.path
+		self.isWhitelisted = (whitelistedSearch in whitelist.whitelistedExtensions)
 
 		return
 

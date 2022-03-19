@@ -253,8 +253,8 @@ def initKK():
 
 	#now can import 3rd party lib
 	# ->yapsy
-        import logging
-        logging.basicConfig(level=logging.ERROR)
+	import logging
+	logging.basicConfig(level=logging.ERROR)
 	from yapsy.PluginManager import PluginManager
 
 	#parse options/args

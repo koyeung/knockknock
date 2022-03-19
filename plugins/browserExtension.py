@@ -256,9 +256,9 @@ class scan(IPlugin):
 						continue
 
 				# pref file just has the list of ids,
-                                # everything else we might want is in
-                                # os.path.dirname(chromePreferenceFile) + '/Extensions/' + id + version + manifest.json
-                                # manifest has name, description
+				# everything else we might want is in
+				# os.path.dirname(chromePreferenceFile) + '/Extensions/' + id + version + manifest.json
+				# manifest has name, description
 
 				extensions = preferences['extensions']['install_signature']['ids']
 
@@ -271,23 +271,23 @@ class scan(IPlugin):
 
 					#save key
 					extensionInfo['id'] = extensionKey
-                                        extensionPath = os.path.dirname(chromePreferenceFile) + '/Extensions/' + extensionInfo['id']
+					extensionPath = os.path.dirname(chromePreferenceFile) + '/Extensions/' + extensionInfo['id']
 
-                                        extdir = os.listdir( extensionPath )
-                                        for verdir in extdir:
-                                                manpath = extensionPath + '/' + verdir + '/manifest.json'
+					extdir = os.listdir( extensionPath )
+					for verdir in extdir:
+							manpath = extensionPath + '/' + verdir + '/manifest.json'
 
-                                                with open( manpath, 'r' ) as file:
-                                                        manifest = json.loads(file.read())
-                                                        if not manifest:
-                                                                continue;
+							with open( manpath, 'r' ) as file:
+									manifest = json.loads(file.read())
+									if not manifest:
+											continue;
 
-                                                extensionInfo['path'] = manpath
-                                                extensionInfo['name'] = manifest['name']
-                                                extensionInfo['description'] = manifest['description']
+							extensionInfo['path'] = manpath
+							extensionInfo['name'] = manifest['name']
+							extensionInfo['description'] = manifest['description']
 
-                                                #create and append
-                                                results.append(extension.Extension(extensionInfo))
+							#create and append
+							results.append(extension.Extension(extensionInfo))
 
 			#ignore exceptions
 			except Exception as e:
