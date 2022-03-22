@@ -1,0 +1,30 @@
+name: basic_checks
+
+on: [push]
+
+jobs:
+
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: Install supporting packages
+        run: |
+          python3 -m pip install --upgrade pip setuptools wheel
+          pip install tox poetry
+
+      - name: Show versions
+        run: |
+          uname -a
+          python3 --version
+          echo "tox: $(tox --version)"
+          poetry --version
+          
+      - name: Run lint
+        run: tox -e lint
