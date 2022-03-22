@@ -191,7 +191,6 @@ def allHashes(results):
 
 
 # initialize knockknock
-# TODO: test with python 2.6
 def initKK():
 
     # global args
@@ -204,19 +203,11 @@ def initKK():
     global argparse
 
     # get python version
-    pythonVersion = sys.version_info
+    python_version = sys.version_info
 
-    # check that python is at least 2.7
-    if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-
-        # err msg
-        # ->as logging isn't init'd yet, just print directly
-        print(("ERROR: KnockKnock requires python 2.7+ (found: %s)" % (pythonVersion)))
-
-        # bail
+    if (python_version.major, python_version.minor) < (3, 8):
+        LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
         return False
-
-    # TODO: check for python 3.0?
 
     # try import argparse
     # ->should work now since just checked that python is 2.7+
