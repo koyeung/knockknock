@@ -54,7 +54,7 @@ def formatResults(results, asJSON) -> str:
         formattedResults += "WHO'S THERE:\n"
 
         # iterate over all results
-        for result in results:
+        for result in _sort_results(results):
 
             # add header (name)
             if result["items"]:
@@ -63,7 +63,7 @@ def formatResults(results, asJSON) -> str:
                 formattedResults += "\n[" + result["name"] + "]\n"
 
             # iterate over each startup object
-            for startupObj in result["items"]:
+            for startupObj in _sort_startup_objs(result["items"]):
 
                 # inc count
                 startupObjCount += 1
@@ -85,3 +85,11 @@ def formatResults(results, asJSON) -> str:
             formattedResults += "\nTOTAL ITEMS FOUND: %d\n" % startupObjCount
 
     return formattedResults
+
+
+def _sort_results(results):
+    return sorted(results, key=lambda x: x["name"])
+
+
+def _sort_startup_objs(startup_objs):
+    return sorted(startup_objs, key=lambda x: x.name)
