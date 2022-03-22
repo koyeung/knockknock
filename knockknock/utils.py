@@ -41,34 +41,6 @@ PROCESS_TYPE_BG = 0x0
 PROCESS_TYPE_DOCK = 0x1
 
 
-# load python <-> Objc bindings
-# ->might fail if non-Apple version of python is being used
-def loadObjcBindings():
-
-    # flag indicating load OK
-    load_ok = False
-
-    # wrap
-    try:
-
-        # attempt imports
-        import Foundation
-        import objc
-
-        # set flag
-        # ->load OK
-        load_ok = True
-
-    # imports not found
-    except ImportError as e:
-
-        # set flag
-        # ->load not OK
-        load_ok = False
-
-    return load_ok
-
-
 # check if OS version is supported
 def isSupportedOS():
 

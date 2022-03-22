@@ -209,12 +209,6 @@ def _init_knockknock(args) -> PluginManager:
     else:
         LOGGER.info("%s is a supported OS X version", ".".join(utils.getOSVersion()))
 
-    # load python <-> Objc bindings
-    # ->might fail if non-Apple version of python is being used
-    assert (
-        utils.loadObjcBindings()
-    ), "python <-> Objc bindings/module not installed\n       run via /usr/bin/python or install modules via 'pip install pyobjc' to fix"
-
     # load whitelists
     whitelist.loadWhitelists()
 
