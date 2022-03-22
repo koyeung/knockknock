@@ -9,6 +9,8 @@ Knock Knock - who's there?
     $ python knockknock.py
 
 
+Please refer to [README.python3.md](README.python3.md) for running on Python 3.
+
 #### details
 KnockKnock is command line python script that displays persistent OS X binaries that are set to execute automatically at each boot. Since KnockKnock takes an unbiased approach it can generically detect persist OS X malware, both today, and in the future. It should be noted though, this approach will also list legitimate binaries. However, as KnockKnock by default, will filter out unmodified Apple-signed binaries, the output is greatly reduced, leaving a handful of binaries that quickly can be examined and manually verified.
 
