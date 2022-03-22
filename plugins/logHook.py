@@ -8,14 +8,11 @@ __author__ = "patrick w"
 
 import os
 
-import command
-
-# project imports
-import file
-import utils
-
 # plugin framwork import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import command, file, utils
 
 # login window directories
 LOGIN_WINDOW_FILES = [

@@ -1,11 +1,9 @@
 __author__ = "patrick"
 
 import json
-import os
 
 # project imports
-import utils
-import whitelist
+from . import whitelist
 
 
 class Extension:

@@ -12,12 +12,11 @@ launch daemons and agents
 import glob
 import os
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # directories for launch daemons
 LAUNCH_DAEMON_DIRECTORIES = [

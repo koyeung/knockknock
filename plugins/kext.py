@@ -10,12 +10,11 @@ kernel extensions (kexts)
 
 import glob
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # directories where kexts live
 KEXT_DIRECTORIES = ["/System/Library/Extensions/", "/Library/Extensions/"]

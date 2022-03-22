@@ -11,8 +11,7 @@ import urllib.parse
 import urllib.request
 
 # project imports
-import file
-import utils
+from . import file, utils
 
 # global dictionary of VT results
 vtResults = {}

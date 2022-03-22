@@ -12,13 +12,11 @@ launchd.conf
 
 import os
 
-import command
-
-# project imports
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import command, utils
 
 # path to launchd.conf
 LAUNCHD_CONF_FILE = "/etc/launchd.conf"

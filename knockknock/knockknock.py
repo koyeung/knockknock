@@ -3,19 +3,14 @@
 # KnockKnock by Patrick Wardle is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
-import json
+import logging
 import os
 import sys
 import traceback
-
-import command
+from pathlib import Path
 
 # project imports
-import file
-import output
-import utils
-import virusTotal
-import whitelist
+from . import file, output, utils, virusTotal, whitelist
 
 # directory containing plugins
 PLUGIN_DIR = "plugins/"
@@ -28,6 +23,8 @@ PluginManager = None
 
 # global plugin manager
 pluginManagerObj = None
+
+LOGGER = logging.getLogger(__name__)
 
 # main interface
 def knocknock():
@@ -254,13 +251,8 @@ def initKK():
         # bail
         return False
 
-    # add knock knock's lib path to system path
-    # ->ensures 3rd-party libs will be imported OK
-    sys.path.insert(0, os.path.join(utils.getKKDirectory(), "libs"))
-
     # now can import 3rd party lib
     # ->yapsy
-    import logging
 
     logging.basicConfig(level=logging.ERROR)
     from yapsy.PluginManager import PluginManager
@@ -404,7 +396,7 @@ def initPluginManager():
         return False
 
     # set plugin path
-    pluginManagerObj.setPluginPlaces([utils.getKKDirectory() + PLUGIN_DIR])
+    pluginManagerObj.setPluginPlaces([Path(utils.getKKDirectory()).parent / PLUGIN_DIR])
 
     # get all plugins
     pluginManagerObj.collectPlugins()

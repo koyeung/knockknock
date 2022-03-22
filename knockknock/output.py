@@ -1,10 +1,7 @@
 import json
 
-import command
-import extension
-
 # project imports
-import file
+from . import command, extension, file
 
 
 # json encoder

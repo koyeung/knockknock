@@ -14,14 +14,13 @@ import json
 import os
 import traceback
 
-import extension
 import LaunchServices
-
-# project imports
-import utils
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import extension, utils
 
 # safari's extensions path
 SAFARI_EXTENSION_DIRECTORY = "~/Library/Safari/Extensions/Extensions.plist"

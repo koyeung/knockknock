@@ -9,12 +9,11 @@ __author__ = "patrick w"
 import glob
 import os
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # (base) directory that has overrides for launch* and apps
 OVERRIDES_DIRECTORIES = [

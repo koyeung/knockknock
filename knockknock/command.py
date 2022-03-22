@@ -3,7 +3,7 @@ __author__ = "patrick"
 import json
 
 # project imports
-import whitelist
+from . import whitelist
 
 
 class Command:

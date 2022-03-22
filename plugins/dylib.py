@@ -29,12 +29,11 @@ dylibs (loaded via DYLD_INSERT_LIBRARIES)
 import glob
 import os
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # directories for launch daemons and agents
 LAUNCH_ITEMS_DIRECTORIES = [

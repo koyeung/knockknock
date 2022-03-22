@@ -1,7 +1,7 @@
 import json
 
 # project imports
-import utils
+from . import utils
 
 # whitelisted files
 WHITE_LISTED_FILES = "whitelists/whitelistedFiles.json"

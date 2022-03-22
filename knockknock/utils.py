@@ -2,17 +2,13 @@ __author__ = "patrick"
 
 import ctypes
 import ctypes.util
-import fnmatch
-import glob
 import hashlib
 import os
 import platform
 import plistlib
 import re
-import shlex
 import subprocess
 import sys
-import traceback
 
 # support OS X version (major)
 SUPPORTED_OS_VERSION = 10

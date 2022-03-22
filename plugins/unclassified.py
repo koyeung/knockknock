@@ -12,12 +12,11 @@ unclassified items
 import glob
 import os
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # for output, item name
 UNCLASSIFIED_NAME = "Unclassified Items"

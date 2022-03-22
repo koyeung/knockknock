@@ -10,13 +10,11 @@ cronjobs
 
 import glob
 
-import command
-
-# project imports
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import command, utils
 
 # directory that has cron jobs
 CRON_JOB_DIRECTORY = "/private/var/at/tabs/"

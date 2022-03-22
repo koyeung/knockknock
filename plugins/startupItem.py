@@ -15,12 +15,11 @@ startup items
 import glob
 import os
 
-# project imports
-import file
-import utils
-
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+# project imports
+from knockknock import file, utils
 
 # base directories for startup items
 STARTUP_ITEM_BASE_DIRECTORIES = [
