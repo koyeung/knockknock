@@ -7,6 +7,7 @@ import platform
 import plistlib
 import re
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 import Foundation
@@ -39,6 +40,9 @@ PROCESS_TYPE_BG = 0x0
 
 # process type, dock
 PROCESS_TYPE_DOCK = 0x1
+
+# directory containing plugins
+PLUGIN_DIR = "plugins"
 
 
 # check if OS version is supported
@@ -80,11 +84,13 @@ def getOSVersion():
     return version.split(".")
 
 
-# get the base directory of KnockKnock
-def getKKDirectory():
+def get_kk_directory() -> Path:
+    """Get path of KnockKnock directory."""
+    return Path(__file__).parent
 
-    # return script's directory
-    return os.path.dirname(os.path.realpath(__file__)) + "/"
+
+def get_plugins_directory() -> Path:
+    return get_kk_directory().parent / PLUGIN_DIR
 
 
 # load a bundle's Info.plist

@@ -16,9 +16,6 @@ from . import file, output, utils, virusTotal, whitelist
 
 LOGGER = logging.getLogger(__name__)
 
-# directory containing plugins
-PLUGIN_DIR = "plugins/"
-
 
 # main interface
 def knocknock():
@@ -209,9 +206,6 @@ def _init_knockknock(args) -> PluginManager:
     else:
         LOGGER.info("%s is a supported OS X version", ".".join(utils.getOSVersion()))
 
-    # load whitelists
-    whitelist.loadWhitelists()
-
     plugin_manager = _get_plugin_manager()
     LOGGER.info("initialized plugin manager")
 
@@ -281,7 +275,7 @@ def _get_plugin_manager() -> PluginManager:
     assert plugin_manager, "failed to create plugin manager"
 
     # set plugin path
-    plugin_manager.setPluginPlaces([Path(utils.getKKDirectory()).parent / PLUGIN_DIR])
+    plugin_manager.setPluginPlaces([str(utils.get_plugins_directory())])
 
     # get all plugins
     plugin_manager.collectPlugins()

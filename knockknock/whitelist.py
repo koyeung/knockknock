@@ -1,3 +1,4 @@
+import functools
 import json
 
 # project imports
@@ -12,48 +13,26 @@ WHITE_LISTED_COMMANDS = "whitelists/whitelistedCommands.json"
 # whitelisted browser extensions
 WHITE_LISTED_EXTENSIONS = "whitelists/whitelistedExtensions.json"
 
-# global white list
-# ->hashes/info of known good files
-whitelistedFiles = []
 
-# global white list
-# ->commands
-whitelistedCommands = []
+@functools.lru_cache
+def get_file_whitelist():
+    """Return whitelisted files/"""
+    return json.loads(
+        (utils.get_kk_directory() / WHITE_LISTED_FILES).read_text(encoding="utf-8")
+    )
 
-# global white list
-# ->browser extensions
-whitelistedExtensions = []
 
-# todo make this a class with iVars instead of globals
+@functools.lru_cache
+def get_command_whitelist():
+    """Return whitelisted commands."""
+    return json.loads(
+        (utils.get_kk_directory() / WHITE_LISTED_COMMANDS).read_text(encoding="utf-8")
+    )["commands"]
 
-# load whitelists
-def loadWhitelists():
 
-    # global files
-    global whitelistedFiles
-
-    # global commands
-    global whitelistedCommands
-
-    # global
-    global whitelistedExtensions
-
-    # open/load whitelisted files
-    with open(utils.getKKDirectory() + WHITE_LISTED_FILES) as file:
-
-        # load
-        whitelistedFiles = json.load(file)
-
-    # open/load whitelisted commands
-    with open(utils.getKKDirectory() + WHITE_LISTED_COMMANDS) as file:
-
-        # load
-        # ->note, commands are in 'commands' array
-        whitelistedCommands = json.load(file)["commands"]
-
-    # open/load whitelisted commands
-    with open(utils.getKKDirectory() + WHITE_LISTED_EXTENSIONS) as file:
-
-        # load
-        # ->note, commands are in 'commands' array
-        whitelistedExtensions = json.load(file)
+@functools.lru_cache
+def get_extension_whitelist():
+    """Return whitelisted extensions."""
+    return json.loads(
+        (utils.get_kk_directory() / WHITE_LISTED_EXTENSIONS).read_text(encoding="utf-8")
+    )
