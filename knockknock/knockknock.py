@@ -3,6 +3,7 @@
 # KnockKnock by Patrick Wardle is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
+import argparse
 import logging
 import os
 import sys
@@ -13,13 +14,10 @@ from yapsy.PluginManager import PluginManager
 # project imports
 from . import file, output, utils, virusTotal, whitelist
 
+LOGGER = logging.getLogger(__name__)
+
 # directory containing plugins
 PLUGIN_DIR = "plugins/"
-
-# args
-args = None
-
-LOGGER = logging.getLogger(__name__)
 
 
 # main interface
@@ -32,9 +30,13 @@ def knocknock():
 
     try:
 
+        # parse options/args
+        # ->will bail (with msg) if usage is incorrect
+        args = _parse_args()
+
         # init
         # ->logging, plugin manager, etc
-        plugin_manager = _init_knockknock()
+        plugin_manager = _init_knockknock(args)
         LOGGER.info("initialization complete")
 
         # list plugins and bail
@@ -183,13 +185,7 @@ def allHashes(results):
 
 
 # initialize knockknock
-def _init_knockknock() -> PluginManager:
-
-    # global args
-    global args
-
-    # global import
-    global argparse
+def _init_knockknock(args) -> PluginManager:
 
     # get python version
     python_version = sys.version_info
@@ -197,23 +193,6 @@ def _init_knockknock() -> PluginManager:
     if (python_version.major, python_version.minor) < (3, 8):
         LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
         return False
-
-    # try import argparse
-    # ->should work now since just checked that python is 2.7+
-    try:
-
-        # import
-        import argparse
-
-    # handle exception
-    # ->bail w/ error msg
-    except ImportError as exc:
-        LOGGER.error("could not load required module (argparse)")
-        raise
-
-    # parse options/args
-    # ->will bail (with msg) if usage is incorrect
-    args = parseArgs()
 
     if args.verbosity:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -250,7 +229,7 @@ def _init_knockknock() -> PluginManager:
 
 
 # parse args
-def parseArgs():
+def _parse_args():
 
     # init parser
     parser = argparse.ArgumentParser()
