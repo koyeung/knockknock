@@ -122,7 +122,7 @@ def knocknock():
         formattedResults = output.formatResults(results, args.json)
 
         # show em
-        print(formattedResults.encode("ascii", "xmlcharrefreplace"))
+        print(formattedResults.encode("utf-8", "xmlcharrefreplace").decode())
 
     # top level exception handler
     except Exception as e:

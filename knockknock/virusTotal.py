@@ -145,7 +145,9 @@ def queryVT(items):
 
         # build request
         request = urllib.request.Request(
-            VT_URL + VT_API_KEY, json.dumps(items, indent=4), headers=requestHeaders
+            VT_URL + VT_API_KEY,
+            json.dumps(items, indent=4).encode("utf-8"),
+            headers=requestHeaders,
         )
 
         # make request

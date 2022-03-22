@@ -32,7 +32,7 @@ class jsonEncoder(json.JSONEncoder):
 
 # format the results
 # ->either just pretty for stdout or as JSON
-def formatResults(results, asJSON):
+def formatResults(results, asJSON) -> str:
 
     # results; formatted
     formattedResults = ""

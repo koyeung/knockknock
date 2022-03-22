@@ -10,7 +10,7 @@ class File:
 
     # init method
     # ->init instance variables, hash file, etc
-    def __init__(self, path, plist=None, parent=None):
+    def __init__(self, path: str, plist=None, parent=None):
 
         # init path for bundle
         self.bundle = None
@@ -38,12 +38,6 @@ class File:
 
             # save
             self.path = path
-
-        # convert file path to utf-8 if needed
-        if isinstance(self.path, str):
-
-            # convert
-            self.path = self.path.encode("utf-8")
 
         # save plist
         # ->this will be set for launch daemons/agents, inserted dylibs, etc
@@ -178,7 +172,7 @@ class File:
             path = self.bundle
 
         # check the signature
-        (status, signingInfo) = utils.checkSignature(path, self.bundle)
+        (status, signingInfo) = utils.checkSignature(path)
 
         # on success
         # ->save into class var

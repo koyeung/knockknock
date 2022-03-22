@@ -1,7 +1,5 @@
 __author__ = "patrick"
 
-import ctypes
-import ctypes.util
 import hashlib
 import os
 import platform
@@ -9,6 +7,12 @@ import plistlib
 import re
 import subprocess
 import sys
+from typing import Optional
+
+import Foundation
+import Security
+from Foundation import NSURL, NSBundle, NSString
+from Security import errSecSuccess
 
 # support OS X version (major)
 SUPPORTED_OS_VERSION = 10
@@ -39,47 +43,11 @@ SECURITY_FRAMEWORK = (
     "/System/Library/Frameworks/Security.framework/Versions/Current/Security"
 )
 
-#'handle' to loaded security framework
-securityFramework = None
-
-# global objcRuntime 'handle'
-objcRuntime = None
-
-# from OS X
-kSecCSDefaultFlags = 0x0
-
-# from OS X
-kSecCSDoNotValidateResources = 0x4
-kSecCSCheckAllArchitectures = 0x1
-kSecCSCheckNestedCode = 0x8
-kSecCSStrictValidate = 0x16
-kSecCSStrictValidate_kSecCSCheckAllArchitectures = 0x17
-kSecCSStrictValidate_kSecCSCheckAllArchitectures_kSecCSCheckNestedCode = 0x1F
-
-# from OS X
-errSecSuccess = 0x0
-
-# from me
-SecCSSignatureOK = errSecSuccess
-
-# from OS X
-# ->see CSCommon.h
-errSecCSUnsigned = -67062
-
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013
 
-# from OS X
-kSecCSSigningInformation = 0x2
-
-# from OS X
-kSecCodeInfoCertificates = "certificates"
-
 # base directory for users
 USER_BASE_DIRECTORY = "/Users/"
-
-# apple prefix
-__kOSKextApplePrefix = "com.apple."
 
 # process type, not dock
 PROCESS_TYPE_BG = 0x0
@@ -87,26 +55,13 @@ PROCESS_TYPE_BG = 0x0
 # process type, dock
 PROCESS_TYPE_DOCK = 0x1
 
-"""
-kSecCSCheckAllArchitectures = 1 << 0
-kSecCSDoNotValidateExecutable = 1 << 1
-kSecCSDoNotValidateResources = 1 << 2
-kSecCSBasicValidateOnly = kSecCSDoNotValidateExecutable | kSecCSDoNotValidateResources
-kSecCSCheckNestedCode = 1 << 3
-"""
-
 
 # load python <-> Objc bindings
 # ->might fail if non-Apple version of python is being used
 def loadObjcBindings():
 
-    # imports must be global
-    # ->ensures rest of code can access em
-    global objc
-    global Foundation
-
     # flag indicating load OK
-    loadOK = False
+    load_ok = False
 
     # wrap
     try:
@@ -117,16 +72,16 @@ def loadObjcBindings():
 
         # set flag
         # ->load OK
-        loadOK = True
+        load_ok = True
 
     # imports not found
     except ImportError as e:
 
         # set flag
         # ->load not OK
-        loadOK = False
+        load_ok = False
 
-    return loadOK
+    return load_ok
 
 
 # set verbose
@@ -217,7 +172,7 @@ def loadInfoPlist(bundlePath):
     try:
 
         # get main bundle
-        mainBundle = Foundation.NSBundle.bundleWithPath_(bundlePath)
+        mainBundle = NSBundle.bundleWithPath_(bundlePath)
         if mainBundle is not None:
 
             # get dictionary from Info.plist
@@ -256,28 +211,27 @@ def getPathFromPlist(loadedPlist):
 
 
 # get a bundle's executable binary
-def getBinaryFromBundle(bundlePath):
-
-    # executable's path
-    binaryPath = None
+def getBinaryFromBundle(bundlePath) -> Optional[str]:
 
     # wrap
     # ->had some issues with bundleWithPath_()
     try:
 
         # get main bundle
-        mainBundle = Foundation.NSBundle.bundleWithPath_(bundlePath)
+        mainBundle = NSBundle.bundleWithPath_(bundlePath)
         if mainBundle is not None:
 
             # extract executable path
             binaryPath = mainBundle.executablePath()
+
+            return str(binaryPath) if binaryPath else None
 
     # ignore
     except:
 
         pass
 
-    return binaryPath
+    return None
 
 
 # given a list of paths, expand any '~'s into all users
@@ -352,19 +306,14 @@ def expandPath(path):
 # get all users
 def getUsers():
 
-    # users
-    users = []
-
     # wrap
     try:
 
         # init name
-        name = Foundation.NSString.stringWithUTF8String_("/Local/Default")
+        name = NSString("/Local/Default")
 
         # init record type
-        recordType = Foundation.NSString.stringWithUTF8String_(
-            "dsRecTypeStandard:Users"
-        )
+        record_type = NSString("dsRecTypeStandard:Users")
 
         # get root session and check result
         # ->note: pass None as first arg for default session
@@ -372,18 +321,16 @@ def getUsers():
 
         # make query and check result
         query = Foundation.ODQuery.queryWithNode_forRecordTypes_attribute_matchType_queryValues_returnAttributes_maximumResults_error_(
-            root, recordType, None, 0, None, None, 0, None
+            root, record_type, None, 0, None, None, 0, None
         )
 
         # get results
         results = query.resultsAllowingPartial_error_(0, None)
 
-        # iterate over all
-        # ->name is user
-        for result in results:
+        # name is user
+        users = [result.recordName() for result in results]
 
-            # get user
-            users.append(result.recordName())
+        return users
 
     # ignore exceptions
     except Exception as e:
@@ -391,7 +338,7 @@ def getUsers():
         # ignore
         pass
 
-    return users
+    return []
 
 
 # load a plist from a file
@@ -433,92 +380,30 @@ def isKext(path):
 
 
 # check the signature of a file
-def checkSignature(file, bundle=None):
-    # global security framework 'handle'
-    global securityFramework
-
-    # global objcRuntime 'handle'
-    global objcRuntime
-
-    # return dictionary
-    signingInfo = {}
-
-    sigCheckFlags = (
-        kSecCSStrictValidate_kSecCSCheckAllArchitectures_kSecCSCheckNestedCode
-    )
-
-    # status
-    #  ->just related to execution (e.g. API errors)
-    status = not errSecSuccess
-
-    # signed status of file
-    signedStatus = None
+def checkSignature(file: str):
 
     # flag indicating is from Apple
-    isApple = False
+    is_apple = False
 
     # list of authorities
     authorities = []
 
-    # load security framework
-    if not securityFramework:
-
-        # load and check
-        securityFramework = ctypes.cdll.LoadLibrary(SECURITY_FRAMEWORK)
-        if not securityFramework:
-
-            # err msg
-            logMessage(MODE_ERROR, "could not load securityFramework")
-
-            # bail
-            return (status, None)
-
-    # load objC runtime lib
-    if not objcRuntime:
-
-        # load and check
-        objcRuntime = ctypes.cdll.LoadLibrary(ctypes.util.find_library("objc"))
-        if not objcRuntime:
-
-            # err msg
-            logMessage(MODE_ERROR, "could not load objcRuntime library")
-
-            # bail
-            return (status, None)
-
-        # init objc_getClass function's return types
-        objcRuntime.objc_getClass.restype = ctypes.c_void_p
-
-        # init sel_registerName function's return types
-        objcRuntime.sel_registerName.restype = ctypes.c_void_p
-
-    # file as NSString
-    file = Foundation.NSString.stringWithUTF8String_(file)
-
     # file with spaces escaped
-    file = file.stringByAddingPercentEscapesUsingEncoding_(
+    file = NSString(file).stringByAddingPercentEscapesUsingEncoding_(
         Foundation.NSUTF8StringEncoding
-    ).encode("utf-8")
+    )
 
     # init file as url
-    path = Foundation.NSURL.URLWithString_(
-        Foundation.NSString.stringWithUTF8String_(file)
-    )
-
-    # pointer for static code
-    staticCode = ctypes.c_void_p(0)
+    path = NSURL.URLWithString_(file)
 
     # create static code from path and check
-    result = securityFramework.SecStaticCodeCreateWithPath(
-        ctypes.c_void_p(objc.pyobjc_id(path)),
-        kSecCSDefaultFlags,
-        ctypes.byref(staticCode),
+    result, static_code = Security.SecStaticCodeCreateWithPath(
+        path, Security.kSecCSDefaultFlags, None
     )
-    if errSecSuccess != result:
-
+    if result != errSecSuccess:
         # supress flag
-        # ->for for non-r00t users want to supresss this error
-        shouldSupress = False
+        # -> for non-r00t users want to supresss this error
+        should_supress = False
 
         # when user isn't r00t and error is accessed denied
         # ->treat error as just an info warning (addresses issue of '/usr/sbin/cupsd')
@@ -526,81 +411,60 @@ def checkSignature(file, bundle=None):
 
             # supress in non-verbose mode
             # ->overrides default behavior of MODE_WARN
-            shouldSupress = True
+            should_supress = True
 
         # dbg msg
         # ->note: uses log mode
         logMessage(
             MODE_ERROR,
             "SecStaticCodeCreateWithPath('%s') failed with %d" % (path, result),
-            shouldSupress,
+            should_supress,
         )
 
         # bail
-        return (status, None)
+        return not errSecSuccess, None
 
     # check signature
 
-    signedStatus = securityFramework.SecStaticCodeCheckValidityWithErrors(
-        staticCode, sigCheckFlags, None, None
+    sig_check_flags = (
+        Security.kSecCSStrictValidate
+        | Security.kSecCSCheckAllArchitectures
+        | Security.kSecCSCheckNestedCode
+    )
+
+    signed_status, _ = Security.SecStaticCodeCheckValidityWithErrors(
+        static_code, sig_check_flags, None, None
     )
     # make sure binary is signed
     # ->then, determine if signed by apple & always extract signing authorities
-    if errSecSuccess == signedStatus:
+    if signed_status == errSecSuccess:
 
         # set requirement string
         # ->check for 'signed by apple'
-        requirementReference = "anchor apple"
-
-        # get NSString class
-        NSString = objcRuntime.objc_getClass("NSString")
-
-        # init return type for 'stringWithUTF8String:' method
-        objcRuntime.objc_msgSend.restype = ctypes.c_void_p
-
-        # init arg types for 'stringWithUTF8String:' method
-        objcRuntime.objc_msgSend.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-        ]
-
-        # init key via 'stringWithUTF8String:' method
-        requirementsString = objcRuntime.objc_msgSend(
-            NSString,
-            objcRuntime.sel_registerName("stringWithUTF8String:"),
-            requirementReference,
-        )
-
-        # pointer for requirement
-        requirement = ctypes.c_void_p(0)
+        requirements_string = NSString("anchor apple")
 
         # first check if binary is signed by Apple
         # ->create sec requirement
-        if errSecSuccess == securityFramework.SecRequirementCreateWithString(
-            ctypes.c_void_p(requirementsString),
-            kSecCSDefaultFlags,
-            ctypes.byref(requirement),
-        ):
+        result, requirement = Security.SecRequirementCreateWithString(
+            requirements_string, Security.kSecCSDefaultFlags, None
+        )
+        if result == errSecSuccess:
 
             # verify against requirement signature
-
-            if errSecSuccess == securityFramework.SecStaticCodeCheckValidity(
-                staticCode, sigCheckFlags, requirement
-            ):
+            result = Security.SecStaticCodeCheckValidity(
+                static_code, sig_check_flags, requirement
+            )
+            if result == errSecSuccess:
                 # signed by apple
-                isApple = True
-
-        # pointer for info dictionary
-        information = ctypes.c_void_p(0)
+                is_apple = True
 
         # get code signing info, including authorities and check
-        result = securityFramework.SecCodeCopySigningInformation(
-            staticCode, kSecCSSigningInformation, ctypes.byref(information)
+        result, information = Security.SecCodeCopySigningInformation(
+            static_code, Security.kSecCSSigningInformation, None
         )
 
         # check result
-        if errSecSuccess != result:
+        if result != errSecSuccess:
 
             # err msg
             logMessage(
@@ -608,112 +472,37 @@ def checkSignature(file, bundle=None):
             )
 
             # bail
-            return (status, None)
-
-        # init return type for 'stringWithUTF8String:' method
-        objcRuntime.objc_msgSend.restype = ctypes.c_void_p
-
-        # init arg types for 'stringWithUTF8String:' method
-        objcRuntime.objc_msgSend.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-        ]
-
-        # init key via 'stringWithUTF8String:' method
-        key = objcRuntime.objc_msgSend(
-            NSString,
-            objcRuntime.sel_registerName("stringWithUTF8String:"),
-            kSecCodeInfoCertificates,
-        )
-
-        # init return type for 'objectForKey:' method
-        objcRuntime.objc_msgSend.restype = ctypes.c_void_p
-
-        # init arg types for 'objectForKey:' method
-        objcRuntime.objc_msgSend.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-            ctypes.c_void_p,
-        ]
+            return not errSecSuccess, None
 
         # get cert chain from dictionary
-        # ->returns NSArray
-        certChain = objcRuntime.objc_msgSend(
-            information, objcRuntime.sel_registerName("objectForKey:"), key
-        )
-
-        # init return type for 'count:' method
-        objcRuntime.objc_msgSend.restype = ctypes.c_uint
-
-        # init arg types for 'count' method
-        objcRuntime.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-
-        # get number of items in array
-        count = objcRuntime.objc_msgSend(
-            certChain, objcRuntime.sel_registerName("count")
-        )
-
-        # init pointer for cert name(s)
-        certName = ctypes.c_char_p(0)
+        cert_chain = information[Security.kSecCodeInfoCertificates]
 
         # get all certs
-        for index in range(count):
-
-            # init return type for 'objectAtIndex:' method
-            objcRuntime.objc_msgSend.restype = ctypes.c_void_p
-
-            # init arg types for 'objectAtIndex:' method
-            objcRuntime.objc_msgSend.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_void_p,
-                ctypes.c_uint,
-            ]
-
-            # extract cert from array
-            cert = objcRuntime.objc_msgSend(
-                certChain, objcRuntime.sel_registerName("objectAtIndex:"), index
-            )
+        for cert in cert_chain:
 
             # get cert's common name and check
-            result = securityFramework.SecCertificateCopyCommonName(
-                ctypes.c_void_p(cert), ctypes.byref(certName)
-            )
-            if errSecSuccess != result:
-
+            result, cert_name = Security.SecCertificateCopyCommonName(cert, None)
+            if result != errSecSuccess:
                 # just try next
                 continue
 
-            # init return type for 'UTF8String' method
-            objcRuntime.objc_msgSend.restype = ctypes.c_char_p
-
-            # init arg types for 'UTF8String' method
-            objcRuntime.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-
             # extract cert name and append to list
             # ->this is the authority
-            authorities.append(
-                objcRuntime.objc_msgSend(
-                    certName, objcRuntime.sel_registerName("UTF8String")
-                )
-            )
+            authorities.append(cert_name)
 
-        # TODO: CFRelease information
+    # return dictionary
+    signing_info = {
+        # save signed status
+        "status": signed_status,
+        # save flag indicating file signed by apple
+        "isApple": is_apple,
+        # save signing authorities
+        "authorities": authorities,
+    }
 
     # no errors
     # ->might be unsigned though
-    status = errSecSuccess
-
-    # save signed status
-    signingInfo["status"] = signedStatus
-
-    # save flag indicating file signed by apple
-    signingInfo["isApple"] = isApple
-
-    # save signing authorities
-    signingInfo["authorities"] = authorities
-
-    return (status, signingInfo)
+    return errSecSuccess, signing_info
 
 
 # parse a bash file (yes, this is a hack and needs to be improved)
@@ -905,7 +694,7 @@ def getInstalledApps():
 
 # hash (MD5) a file
 # from: http://stackoverflow.com/questions/7829499/using-hashlib-to-compute-md5-digest-of-a-file-in-python-3
-def md5sum(filename):
+def md5sum(filename: str):
 
     # md5 hash
     digest = None
@@ -953,7 +742,9 @@ def getProcessList():
 
     # use ps to get process list
     # ->includes full path + args
-    psOutput = subprocess.check_output(["ps", "-ax", "-o" "pid,ppid,uid,etime,command"])
+    psOutput = subprocess.check_output(
+        ["ps", "-ax", "-o" "pid,ppid,uid,etime,command"], encoding="utf-8"
+    )
 
     # parse/split output
     # ->note: first line is skipped as its the column headers
@@ -1002,7 +793,9 @@ def getProcessList():
 
     # invoke ps again to get process list
     # ->this time just with process pid and name (helps with parsing off args)
-    psOutput = subprocess.check_output(["ps", "-ax", "-o", "pid,command", "-c"])
+    psOutput = subprocess.check_output(
+        ["ps", "-ax", "-o", "pid,command", "-c"], encoding="utf-8"
+    )
 
     # parse/split output
     # ->note: first line is skipped as its the column headers
