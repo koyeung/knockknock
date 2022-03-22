@@ -10,10 +10,13 @@ launchd.conf
     And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
 """
 
+import logging
 import os
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
+
+LOGGER = logging.getLogger(__name__)
 
 # project imports
 from knockknock import command, utils
@@ -43,8 +46,7 @@ class scan(IPlugin):
         # commands
         commands = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(LAUNCHD_CONF_NAME, LAUNCHD_CONF_DESCRIPTION)

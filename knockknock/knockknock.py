@@ -6,7 +6,6 @@
 import logging
 import os
 import sys
-import traceback
 from pathlib import Path
 
 # project imports
@@ -26,8 +25,11 @@ pluginManagerObj = None
 
 LOGGER = logging.getLogger(__name__)
 
+
 # main interface
 def knocknock():
+
+    logging.basicConfig(level=logging.WARNING)
 
     # results
     results = []
@@ -38,14 +40,10 @@ def knocknock():
         # ->logging, plugin manager, etc
         if not initKK():
 
-            # dgb msg
-            utils.logMessage(utils.MODE_ERROR, "initialization(s) failed")
-
-            # bail
+            LOGGER.error("initialization(s) failed")
             return False
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "initialization complete")
+        LOGGER.info("initialization complete")
 
         # list plugins and bail
         if args.list:
@@ -62,10 +60,7 @@ def knocknock():
         # make sure scan succeeded
         if None == results:
 
-            # dbg msg
-            utils.logMessage(utils.MODE_ERROR, "scan failed")
-
-            # bail
+            LOGGER.error("scan failed")
             return False
 
         # depending on args
@@ -110,8 +105,7 @@ def knocknock():
         # get vt results
         if not args.disableVT:
 
-            # dbg msg
-            utils.logMessage(utils.MODE_INFO, "querying VirusTotal - sit tight!")
+            LOGGER.info("querying VirusTotal - sit tight!")
 
             # process
             # ->will query VT and add VT info to all files
@@ -127,16 +121,7 @@ def knocknock():
     # top level exception handler
     except Exception as e:
 
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_ERROR,
-            "\n EXCEPTION, %s() threw: %s" % (sys._getframe().f_code.co_name, e),
-        )
-
-        # stack trace
-        traceback.print_exc()
-
-        # bail
+        LOGGER.exception("failed")
         return False
 
     return True
@@ -244,63 +229,39 @@ def initKK():
     # ->bail w/ error msg
     except ImportError:
 
-        # err msg
-        # ->as logging isn't init'd yet, just print directly
-        print("ERROR: could not load required module (argparse)")
-
-        # bail
+        LOGGER.error("could not load required module (argparse)")
         return False
 
     # now can import 3rd party lib
     # ->yapsy
 
-    logging.basicConfig(level=logging.ERROR)
     from yapsy.PluginManager import PluginManager
 
     # parse options/args
     # ->will bail (with msg) if usage is incorrect
     args = parseArgs()
 
-    # init output/logging
-    if not utils.initLogging(args.verbosity):
+    if args.verbosity:
+        logging.getLogger().setLevel(logging.DEBUG)
 
-        # bail
-        return False
-
-    # dbg msg
-    utils.logMessage(utils.MODE_INFO, "initialized logging")
+    LOGGER.info("initialized logging")
 
     # check version (Mavericks/Yosemite for now)
     # ->this isn't a fatal error for now, so just log a warning for unsupported versions
     if not utils.isSupportedOS():
-
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_WARN,
-            "%s is not an officially supported OS X version (your mileage may vary)"
-            % (".".join(utils.getOSVersion())),
+        LOGGER.warning(
+            "%s is not an officially supported OS X version (your mileage may vary)",
+            ".".join(utils.getOSVersion()),
         )
-
-    # dbg msg
     else:
-
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_INFO,
-            "%s is a supported OS X version" % (".".join(utils.getOSVersion())),
-        )
+        LOGGER.info("%s is a supported OS X version", ".".join(utils.getOSVersion()))
 
     # load python <-> Objc bindings
     # ->might fail if non-Apple version of python is being used
     if not utils.loadObjcBindings():
-
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_ERROR,
-            "python <-> Objc bindings/module not installed\n       run via /usr/bin/python or install modules via 'pip install pyobjc' to fix",
+        LOGGER.error(
+            "python <-> Objc bindings/module not installed\n       run via /usr/bin/python or install modules via 'pip install pyobjc' to fix"
         )
-
-        # bail
         return False
 
     # load whitelists
@@ -312,17 +273,11 @@ def initKK():
         # bail
         return False
 
-    # dbg msg
-    utils.logMessage(utils.MODE_INFO, "initialized plugin manager")
+    LOGGER.info("initialized plugin manager")
 
     # giving warning about r00t
     if 0 != os.geteuid():
-
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_INFO,
-            "not running as r00t...some results may be missed (e.g. CronJobs)",
-        )
+        LOGGER.info("not running as r00t...some results may be missed (e.g. CronJobs)")
 
     return True
 
@@ -389,10 +344,7 @@ def initPluginManager():
     pluginManagerObj = PluginManager()
     if not pluginManagerObj:
 
-        # err msg
-        utils.logMessage(utils.MODE_ERROR, "failed to create plugin manager")
-
-        # bail
+        LOGGER.error("failed to create plugin manager")
         return False
 
     # set plugin path
@@ -407,8 +359,7 @@ def initPluginManager():
 # list plugins
 def listPlugins():
 
-    # dbg msg
-    utils.logMessage(utils.MODE_INFO, "listing plugins")
+    LOGGER.info("listing plugins")
 
     # interate over all plugins
     for plugin in sorted(pluginManagerObj.getAllPlugins(), key=lambda x: x.name):
@@ -432,15 +383,11 @@ def scan(pluginName):
 
     # full scan?
     if not pluginName:
-
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "beginning full scan")
+        LOGGER.info("beginning full scan")
 
     # plugin only
     else:
-
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "beginning scan using %s plugin" % pluginName)
+        LOGGER.info("beginning scan using %s plugin", pluginName)
 
     # interate over all plugins
     for plugin in pluginManagerObj.getAllPlugins():
@@ -450,9 +397,7 @@ def scan(pluginName):
 
         # no plugin names means run 'em all
         if not pluginName:
-
-            # dbg msg
-            utils.logMessage(utils.MODE_INFO, "executing plugin: %s" % plugin.name)
+            LOGGER.info("executing plugin: %s", plugin.name)
 
             # execute current plugin
             pluginResults = plugin.plugin_object.scan()
@@ -470,10 +415,7 @@ def scan(pluginName):
                 # found it
                 foundPlugin = True
 
-                # dbg msg
-                utils.logMessage(
-                    utils.MODE_INFO, "executing requested plugin: %s" % pluginName
-                )
+                LOGGER.info("executing requested plugin: %s", pluginName)
 
                 # execute plugin
                 pluginResults = plugin.plugin_object.scan()
@@ -505,8 +447,7 @@ def scan(pluginName):
     # -> make sure if a specific plugin was specified, it was found/exec'd
     if pluginName and not foundPlugin:
 
-        # err msg
-        utils.logMessage(utils.MODE_ERROR, "did not find requested plugin")
+        LOGGER.error("did not find requested plugin")
 
         # reset results
         results = None

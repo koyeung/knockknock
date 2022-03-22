@@ -4,14 +4,16 @@
 #
 
 import json
+import logging
 import os
-import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
 # project imports
-from . import file, utils
+from . import file
+
+LOGGER = logging.getLogger(__name__)
 
 # global dictionary of VT results
 vtResults = {}
@@ -169,17 +171,9 @@ def queryVT(items):
     # exceptions
     # ->ignore (likely network related)
     except Exception as e:
-
-        # dbg msg
-        utils.logMessage(
-            utils.MODE_ERROR,
-            "\n EXCEPTION, %s() threw: %s" % (sys._getframe().f_code.co_name, e),
-        )
-
-        # ignore
+        LOGGER.exception("failed to query virustotal")
         pass
 
-    # bail
     return
 
 

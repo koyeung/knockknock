@@ -1,18 +1,21 @@
 __author__ = "patrick"
 
 import hashlib
+import logging
 import os
 import platform
 import plistlib
 import re
 import subprocess
-import sys
 from typing import Optional
 
 import Foundation
 import Security
 from Foundation import NSURL, NSBundle, NSString
 from Security import errSecSuccess
+
+LOGGER = logging.getLogger(__name__)
+
 
 # support OS X version (major)
 SUPPORTED_OS_VERSION = 10
@@ -24,24 +27,6 @@ MIN_OS_VERSION_MINOR = 9
 # max supported OS X version (minor)
 # ->10.11
 MAX_OS_VERSION_MINOR = 11
-
-# global verbose/logging flag
-verbose = False
-
-# logging mode; info
-MODE_INFO = "INFO"
-
-# logging mode; warning
-MODE_WARN = "WARNING"
-
-# logging mode; error
-MODE_ERROR = "ERROR"
-
-# path to security framework
-# ->for validating signatures
-SECURITY_FRAMEWORK = (
-    "/System/Library/Frameworks/Security.framework/Versions/Current/Security"
-)
 
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013
@@ -82,37 +67,6 @@ def loadObjcBindings():
         load_ok = False
 
     return load_ok
-
-
-# set verbose
-def initLogging(verbosity):
-
-    # global flag
-    global verbose
-
-    # set global flag
-    verbose = verbosity
-
-    return True
-
-
-# display msgs
-def logMessage(mode, msg, shouldSupress=None):
-
-    # always display warnings and errors
-    if (MODE_WARN == mode or MODE_ERROR == mode) and not shouldSupress:
-
-        # display it
-        sys.stderr.write("%s: %s\n" % (mode, msg))
-
-    # in verbose mode
-    # ->always display everything
-    elif verbose:
-
-        # display it
-        print("%s: %s" % (mode, msg))
-
-    return
 
 
 # check if OS version is supported
@@ -401,27 +355,19 @@ def checkSignature(file: str):
         path, Security.kSecCSDefaultFlags, None
     )
     if result != errSecSuccess:
-        # supress flag
-        # -> for non-r00t users want to supresss this error
-        should_supress = False
 
         # when user isn't r00t and error is accessed denied
-        # ->treat error as just an info warning (addresses issue of '/usr/sbin/cupsd')
-        if (0 != os.geteuid()) and (result == kPOSIXErrorEACCES):
-
-            # supress in non-verbose mode
-            # ->overrides default behavior of MODE_WARN
-            should_supress = True
-
-        # dbg msg
-        # ->note: uses log mode
-        logMessage(
-            MODE_ERROR,
-            "SecStaticCodeCreateWithPath('%s') failed with %d" % (path, result),
-            should_supress,
+        # ->treat error as just an INFO (addresses issue of '/usr/sbin/cupsd')
+        log_level = (
+            logging.INFO
+            if (0 != os.geteuid()) and (result == kPOSIXErrorEACCES)
+            else logging.WARNING
         )
 
-        # bail
+        LOGGER.log(
+            log_level, "SecStaticCodeCreateWithPath('%s') failed with %d", path, result
+        )
+
         return not errSecSuccess, None
 
     # check signature
@@ -465,13 +411,7 @@ def checkSignature(file: str):
 
         # check result
         if result != errSecSuccess:
-
-            # err msg
-            logMessage(
-                MODE_ERROR, "SecCodeCopySigningInformation() failed with %d" % result
-            )
-
-            # bail
+            LOGGER.error("SecCodeCopySigningInformation() failed with %d", result)
             return not errSecSuccess, None
 
         # get cert chain from dictionary

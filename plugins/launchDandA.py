@@ -10,6 +10,7 @@ launch daemons and agents
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -17,6 +18,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directories for launch daemons
 LAUNCH_DAEMON_DIRECTORIES = [
@@ -69,8 +72,7 @@ class scan(IPlugin):
         # results
         results = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results
         # ->for launch daemons
@@ -111,8 +113,7 @@ class scan(IPlugin):
         # get all files (plists) in launch daemon/agent directories
         for directory in directories:
 
-            # dbg msg
-            utils.logMessage(utils.MODE_INFO, "scanning %s" % directory)
+            LOGGER.info("scanning %s", directory)
 
             # get launch daemon/agent
             launchItems.extend(glob.glob(directory + "*"))
@@ -314,8 +315,7 @@ class scan(IPlugin):
             # wrap
             try:
 
-                # dbg msg
-                utils.logMessage(utils.MODE_INFO, "opening %s" % overide)
+                LOGGER.info("opening %s", overide)
 
                 # load plist and check
                 plistData = utils.loadPlist(overide)

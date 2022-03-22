@@ -1,9 +1,13 @@
 __author__ = "patrick"
 
+import logging
 import os
+from pathlib import Path
 
 # project imports
 from . import utils, whitelist
+
+LOGGER = logging.getLogger(__name__)
 
 
 class File:
@@ -172,6 +176,10 @@ class File:
             path = self.bundle
 
         # check the signature
+        if not Path(path).exists():
+            LOGGER.warning("path %s not exists", path)
+            return
+
         (status, signingInfo) = utils.checkSignature(path)
 
         # on success
