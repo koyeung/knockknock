@@ -1,76 +1,73 @@
-__author__ = 'patrick w'
+__author__ = "patrick w"
 
-'''
+"""
 cronjobs
 
     conjobs allow scripts or commands to be executed on time-based intervals
 
     this plugin reads all users' cronjob files (/private/var/at/tabs/*) to extract all registered cronjobs
-'''
+"""
 
 import glob
 
-#project imports
-import utils
-import command
-
-#plugin framework import
+# plugin framework import
 from yapsy.IPlugin import IPlugin
 
-#directory that has cron jobs
-CRON_JOB_DIRECTORY = '/private/var/at/tabs/'
+# project imports
+from knockknock import command, utils
 
-#for output, item name
-CRON_JOBS_NAME = 'Cron Jobs'
+# directory that has cron jobs
+CRON_JOB_DIRECTORY = "/private/var/at/tabs/"
 
-#for output, description of items
-CRON_JOBS_DESCRIPTION = 'Jobs that are scheduled to run on specifed basis'
+# for output, item name
+CRON_JOBS_NAME = "Cron Jobs"
 
-#plugin class
+# for output, description of items
+CRON_JOBS_DESCRIPTION = "Jobs that are scheduled to run on specifed basis"
+
+# plugin class
 class scan(IPlugin):
 
-	#init results dictionary
-	# ->item name, description, and list
-	def initResults(self, name, description):
+    # init results dictionary
+    # ->item name, description, and list
+    def initResults(self, name, description):
 
-		#results dictionary
-		return {'name': name, 'description': description, 'items': []}
+        # results dictionary
+        return {"name": name, "description": description, "items": []}
 
-	#invoked by core
-	def scan(self):
+    # invoked by core
+    def scan(self):
 
-		#cron jobs files
-		cronJobFiles = []
+        # cron jobs files
+        cronJobFiles = []
 
-		#init results dictionary
-		results = self.initResults(CRON_JOBS_NAME, CRON_JOBS_DESCRIPTION)
+        # init results dictionary
+        results = self.initResults(CRON_JOBS_NAME, CRON_JOBS_DESCRIPTION)
 
-		#dbg
-		utils.logMessage(utils.MODE_INFO, 'running scan')
+        # dbg
+        utils.logMessage(utils.MODE_INFO, "running scan")
 
-		#get all files in kext directories
-		cronJobFiles.extend(glob.glob(CRON_JOB_DIRECTORY + '*'))
+        # get all files in kext directories
+        cronJobFiles.extend(glob.glob(CRON_JOB_DIRECTORY + "*"))
 
-		#process
-		# ->open file and read each line
-		for cronJobFile in cronJobFiles:
+        # process
+        # ->open file and read each line
+        for cronJobFile in cronJobFiles:
 
-			#open file
-			# ->read each line (for now, assume 1 cron job per line)
-			with open(cronJobFile, 'r') as file:
+            # open file
+            # ->read each line (for now, assume 1 cron job per line)
+            with open(cronJobFile, "r") as file:
 
-				#read each line
-				for cronJobData in file:
+                # read each line
+                for cronJobData in file:
 
-					#skip comment lines
-					if cronJobData.lstrip().startswith('#'):
+                    # skip comment lines
+                    if cronJobData.lstrip().startswith("#"):
 
-						#skip
-						continue
+                        # skip
+                        continue
 
-					#create and append job
-					results['items'].append(command.Command(cronJobData.strip()))
+                    # create and append job
+                    results["items"].append(command.Command(cronJobData.strip()))
 
-		return results
-
-
+        return results

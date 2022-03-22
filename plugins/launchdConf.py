@@ -1,6 +1,6 @@
-__author__ = 'patrick w'
+__author__ = "patrick w"
 
-'''
+"""
 launchd.conf
 
     the /etc/launchd.conf file contains commands that are that are executed at boot by launchctl
@@ -8,65 +8,58 @@ launchd.conf
     this plugin (very basically) parses this file, extacting all such commands
 
     And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
-'''
+"""
 
 import os
 
-#project imports
-import utils
-import command
-
-#plugin framework import
+# plugin framework import
 from yapsy.IPlugin import IPlugin
 
-#path to launchd.conf
-LAUNCHD_CONF_FILE = '/etc/launchd.conf'
+# project imports
+from knockknock import command, utils
 
-#for output, item name
-LAUNCHD_CONF_NAME = 'Launchd Configuration File'
+# path to launchd.conf
+LAUNCHD_CONF_FILE = "/etc/launchd.conf"
 
-#for output, description of items
-LAUNCHD_CONF_DESCRIPTION = 'Commands that are executed by LaunchCtl'
+# for output, item name
+LAUNCHD_CONF_NAME = "Launchd Configuration File"
 
-#plugin class
+# for output, description of items
+LAUNCHD_CONF_DESCRIPTION = "Commands that are executed by LaunchCtl"
+
+# plugin class
 class scan(IPlugin):
 
-	#init results dictionary
-	# ->item name, description, and items list
-	def initResults(self, name, description):
+    # init results dictionary
+    # ->item name, description, and items list
+    def initResults(self, name, description):
 
-		#results dictionary
-		return {'name': name, 'description': description, 'items': []}
+        # results dictionary
+        return {"name": name, "description": description, "items": []}
 
-	#invoked by core
-	def scan(self):
+    # invoked by core
+    def scan(self):
 
-		#commands
-		commands = []
+        # commands
+        commands = []
 
-		#dbg msg
-		utils.logMessage(utils.MODE_INFO, 'running scan')
+        # dbg msg
+        utils.logMessage(utils.MODE_INFO, "running scan")
 
-		#init results dictionary
-		results = self.initResults(LAUNCHD_CONF_NAME, LAUNCHD_CONF_DESCRIPTION)
+        # init results dictionary
+        results = self.initResults(LAUNCHD_CONF_NAME, LAUNCHD_CONF_DESCRIPTION)
 
-		#get all commands in launchd.conf
-		# ->note, commands in functions will be ignored...
-		commands = utils.parseBashFile(LAUNCHD_CONF_FILE)
+        # get all commands in launchd.conf
+        # ->note, commands in functions will be ignored...
+        commands = utils.parseBashFile(LAUNCHD_CONF_FILE)
 
-		#iterate over all commands
-		# ->instantiate command obj and save into results
-		for extractedCommand in commands:
+        # iterate over all commands
+        # ->instantiate command obj and save into results
+        for extractedCommand in commands:
 
-			#TODO: could prolly do some more advanced processing (e.g. look for bsexec, etc)
+            # TODO: could prolly do some more advanced processing (e.g. look for bsexec, etc)
 
-			#instantiate and save
-			results['items'].append(command.Command(extractedCommand))
+            # instantiate and save
+            results["items"].append(command.Command(extractedCommand))
 
-		return results
-
-
-
-
-
-
+        return results

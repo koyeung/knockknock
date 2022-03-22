@@ -1,151 +1,148 @@
-__author__ = 'patrick w'
+__author__ = "patrick w"
 
-'''
+"""
 	login items are the legit way to register applications for auto execution when a user logs in
 
 	this plugin parses the undocumented contents of all users' com.apple.loginitems.plist to find login items
-'''
+"""
 
 import os
 
-#project imports
-import file
-import utils
-
-#plugin framework import
+# plugin framework import
 from yapsy.IPlugin import IPlugin
 
-#directory that has login items
-# ->this is expanded for all user's on the system
-LOGIN_ITEM_FILE = '~/Library/Preferences/com.apple.loginitems.plist'
+# project imports
+from knockknock import file, utils
 
-#start of login item
+# directory that has login items
+# ->this is expanded for all user's on the system
+LOGIN_ITEM_FILE = "~/Library/Preferences/com.apple.loginitems.plist"
+
+# start of login item
 LOGIN_ITEM_PREFIX = "file://"
 
-#for output, item name
-LOGIN_ITEM_NAME = 'Login Items'
+# for output, item name
+LOGIN_ITEM_NAME = "Login Items"
 
-#for output, description of items
-LOGIN_ITEM_DESCRIPTION = 'Binaries that are executed at login'
+# for output, description of items
+LOGIN_ITEM_DESCRIPTION = "Binaries that are executed at login"
 
-#plugin class
+# plugin class
 class scan(IPlugin):
 
-	#init results dictionary
-	# ->plugin name, description, and list
-	def initResults(self, name, description):
+    # init results dictionary
+    # ->plugin name, description, and list
+    def initResults(self, name, description):
 
-		#results dictionary
-		return {'name': name, 'description': description, 'items': []}
+        # results dictionary
+        return {"name": name, "description": description, "items": []}
 
-	#invoked by core
-	def scan(self):
+    # invoked by core
+    def scan(self):
 
-		#login items files
-		loginItems = []
+        # login items files
+        loginItems = []
 
-		#dbg msg
-		utils.logMessage(utils.MODE_INFO, 'running scan')
+        # dbg msg
+        utils.logMessage(utils.MODE_INFO, "running scan")
 
-		#init results dictionary
-		results = self.initResults(LOGIN_ITEM_NAME, LOGIN_ITEM_DESCRIPTION)
+        # init results dictionary
+        results = self.initResults(LOGIN_ITEM_NAME, LOGIN_ITEM_DESCRIPTION)
 
-		#process
-		# ->open file and read each line
-		for userLoginItems in utils.expandPath(LOGIN_ITEM_FILE):
+        # process
+        # ->open file and read each line
+        for userLoginItems in utils.expandPath(LOGIN_ITEM_FILE):
 
-			#wrap
-			try:
+            # wrap
+            try:
 
-				#dbg msg
-				utils.logMessage(utils.MODE_INFO, 'scanning %s' % userLoginItems)
+                # dbg msg
+                utils.logMessage(utils.MODE_INFO, "scanning %s" % userLoginItems)
 
-				#load plist and check
-				plistData = utils.loadPlist(userLoginItems)
+                # load plist and check
+                plistData = utils.loadPlist(userLoginItems)
 
-				#extract sessions items
-				sesssionItems = plistData['SessionItems']
+                # extract sessions items
+                sesssionItems = plistData["SessionItems"]
 
-				#extract custom list items
-				customListItems = sesssionItems['CustomListItems']
+                # extract custom list items
+                customListItems = sesssionItems["CustomListItems"]
 
-				#iterate over all login items
-				for customListItem in customListItems:
+                # iterate over all login items
+                for customListItem in customListItems:
 
-					#wrap it
-					try:
+                    # wrap it
+                    try:
 
-						#extact alias data
-						aliasData = list((customListItem['Alias']).bytes())
+                        # extact alias data
+                        aliasData = list((customListItem["Alias"]).bytes())
 
-						#parse alias data
-						loginItem = self.parseAliasData(aliasData)
+                        # parse alias data
+                        loginItem = self.parseAliasData(aliasData)
 
-						#save extracted login item
-						if loginItem:
+                        # save extracted login item
+                        if loginItem:
 
-							#save
-							results['items'].append(file.File(loginItem))
+                            # save
+                            results["items"].append(file.File(loginItem))
 
-					#ignore exceptions
-					except Exception, e:
+                    # ignore exceptions
+                    except Exception as e:
 
-						#skip
-						continue
+                        # skip
+                        continue
 
-			#ignore exceptions
-			except:
+            # ignore exceptions
+            except:
 
-				#skip
-				continue
+                # skip
+                continue
 
-		return results
+        return results
 
-	#path to login item is in 'alias' data
-	# ->this is an undocumented blob of data that has the path to the login item somwhere in it
-	#   to find it, code looks for data thats formatted size:str that's a file
-	def parseAliasData(self, aliasData):
+    # path to login item is in 'alias' data
+    # ->this is an undocumented blob of data that has the path to the login item somwhere in it
+    #   to find it, code looks for data thats formatted size:str that's a file
+    def parseAliasData(self, aliasData):
 
-		#extract login item
-		loginItem = None
+        # extract login item
+        loginItem = None
 
-		#scan thru binary data
-		# look for size:str that's a file
-		for i in range(0, len(aliasData)):
+        # scan thru binary data
+        # look for size:str that's a file
+        for i in range(0, len(aliasData)):
 
-			#extract size
-			size = ord(aliasData[i])
+            # extract size
+            size = ord(aliasData[i])
 
-			# if what could be a size is reasonable
-			# at least 2 (this could be higher) and smaller than rest of the data
-			if size < 2 or size > len(aliasData) - i:
-				#skip
-				continue
+            # if what could be a size is reasonable
+            # at least 2 (this could be higher) and smaller than rest of the data
+            if size < 2 or size > len(aliasData) - i:
+                # skip
+                continue
 
-			#extract possible file
-			file = '/' + ''.join(aliasData[i + 1:i + 1 + size])
+            # extract possible file
+            file = "/" + "".join(aliasData[i + 1 : i + 1 + size])
 
-			#wrap
-			try:
+            # wrap
+            try:
 
-				#check if it exists
-				if not os.path.exists(file):
+                # check if it exists
+                if not os.path.exists(file):
 
-					#skip
-					continue
+                    # skip
+                    continue
 
-			#ignore exceptions
-			except:
+            # ignore exceptions
+            except:
 
-				#skip
-				continue
+                # skip
+                continue
 
-			#found file
-			loginItem = file
+            # found file
+            loginItem = file
 
-			#bail
-			break
+            # bail
+            break
 
-		return loginItem
-
-
+        return loginItem
