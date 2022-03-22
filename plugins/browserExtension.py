@@ -15,7 +15,7 @@ import logging
 import os
 import traceback
 
-import LaunchServices
+import CoreServices
 
 LOGGER = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class scan(IPlugin):
 
             # get list of app IDs that can handle 'https'
             # ->i.e. browsers
-            browsersIDs = LaunchServices.LSCopyAllHandlersForURLScheme("https")
+            browsersIDs = CoreServices.LSCopyAllHandlersForURLScheme("https")
 
             # app IDs to full paths to the apps
             for browserID in browsersIDs:
@@ -147,8 +147,8 @@ class scan(IPlugin):
 
                     # use LSFindApplicationForInfo to convert ID to app path
                     # returns a list, 3rd item an NSURL to the browser
-                    browserURL = LaunchServices.LSFindApplicationForInfo(
-                        LaunchServices.kLSUnknownCreator, browserID, None, None, None
+                    browserURL = CoreServices.LSFindApplicationForInfo(
+                        CoreServices.kLSUnknownCreator, browserID, None, None, None
                     )[2]
 
                     # convert the url to a filepath
