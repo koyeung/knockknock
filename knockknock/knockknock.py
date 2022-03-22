@@ -8,6 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+from yapsy.PluginManager import PluginManager
+
 # project imports
 from . import file, output, utils, virusTotal, whitelist
 
@@ -16,12 +18,6 @@ PLUGIN_DIR = "plugins/"
 
 # args
 args = None
-
-# global plugin manager
-PluginManager = None
-
-# global plugin manager
-pluginManagerObj = None
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,24 +34,20 @@ def knocknock():
 
         # init
         # ->logging, plugin manager, etc
-        if not initKK():
-
-            LOGGER.error("initialization(s) failed")
-            return False
-
+        plugin_manager = _init_knockknock()
         LOGGER.info("initialization complete")
 
         # list plugins and bail
         if args.list:
 
             # display plugins
-            listPlugins()
+            _list_plugins(plugin_manager)
 
             # bail
             return True
 
         # scan for thingz
-        results = scan(args.plugin)
+        results = _scan(plugin_name=args.plugin, plugin_manager=plugin_manager)
 
         # make sure scan succeeded
         if None == results:
@@ -191,13 +183,10 @@ def allHashes(results):
 
 
 # initialize knockknock
-def initKK():
+def _init_knockknock() -> PluginManager:
 
     # global args
     global args
-
-    # global import
-    global PluginManager
 
     # global import
     global argparse
@@ -218,15 +207,9 @@ def initKK():
 
     # handle exception
     # ->bail w/ error msg
-    except ImportError:
-
+    except ImportError as exc:
         LOGGER.error("could not load required module (argparse)")
-        return False
-
-    # now can import 3rd party lib
-    # ->yapsy
-
-    from yapsy.PluginManager import PluginManager
+        raise
 
     # parse options/args
     # ->will bail (with msg) if usage is incorrect
@@ -249,28 +232,21 @@ def initKK():
 
     # load python <-> Objc bindings
     # ->might fail if non-Apple version of python is being used
-    if not utils.loadObjcBindings():
-        LOGGER.error(
-            "python <-> Objc bindings/module not installed\n       run via /usr/bin/python or install modules via 'pip install pyobjc' to fix"
-        )
-        return False
+    assert (
+        utils.loadObjcBindings()
+    ), "python <-> Objc bindings/module not installed\n       run via /usr/bin/python or install modules via 'pip install pyobjc' to fix"
 
     # load whitelists
     whitelist.loadWhitelists()
 
-    # init plugin manager
-    if not initPluginManager():
-
-        # bail
-        return False
-
+    plugin_manager = _get_plugin_manager()
     LOGGER.info("initialized plugin manager")
 
     # giving warning about r00t
     if 0 != os.geteuid():
         LOGGER.info("not running as r00t...some results may be missed (e.g. CronJobs)")
 
-    return True
+    return plugin_manager
 
 
 # parse args
@@ -326,44 +302,35 @@ def parseArgs():
 
 
 # init plugin manager
-def initPluginManager():
+def _get_plugin_manager() -> PluginManager:
 
-    # global
-    global pluginManagerObj
-
-    # create plugin manager
-    pluginManagerObj = PluginManager()
-    if not pluginManagerObj:
-
-        LOGGER.error("failed to create plugin manager")
-        return False
+    plugin_manager = PluginManager()
+    assert plugin_manager, "failed to create plugin manager"
 
     # set plugin path
-    pluginManagerObj.setPluginPlaces([Path(utils.getKKDirectory()).parent / PLUGIN_DIR])
+    plugin_manager.setPluginPlaces([Path(utils.getKKDirectory()).parent / PLUGIN_DIR])
 
     # get all plugins
-    pluginManagerObj.collectPlugins()
+    plugin_manager.collectPlugins()
 
-    return True
+    return plugin_manager
 
 
 # list plugins
-def listPlugins():
+def _list_plugins(plugin_manager) -> None:
 
     LOGGER.info("listing plugins")
 
     # interate over all plugins
-    for plugin in sorted(pluginManagerObj.getAllPlugins(), key=lambda x: x.name):
+    for plugin in sorted(plugin_manager.getAllPlugins(), key=lambda x: x.name):
 
         # dbg msg
         # ->always use print, since -v might not have been used
         print("%s -> %s" % (os.path.split(plugin.path)[1], plugin.name))
 
-    return
-
 
 # scanz!
-def scan(pluginName):
+def _scan(*, plugin_name, plugin_manager):
 
     # results
     results = []
@@ -373,21 +340,21 @@ def scan(pluginName):
     foundPlugin = False
 
     # full scan?
-    if not pluginName:
+    if not plugin_name:
         LOGGER.info("beginning full scan")
 
     # plugin only
     else:
-        LOGGER.info("beginning scan using %s plugin", pluginName)
+        LOGGER.info("beginning scan using %s plugin", plugin_name)
 
     # interate over all plugins
-    for plugin in pluginManagerObj.getAllPlugins():
+    for plugin in plugin_manager.getAllPlugins():
 
         # results from plugin
         pluginResults = None
 
         # no plugin names means run 'em all
-        if not pluginName:
+        if not plugin_name:
             LOGGER.info("executing plugin: %s", plugin.name)
 
             # execute current plugin
@@ -401,12 +368,12 @@ def scan(pluginName):
             currentPlugin = os.path.split(plugin.path)[1]
 
             # check for match
-            if pluginName.lower() == currentPlugin.lower():
+            if plugin_name.lower() == currentPlugin.lower():
 
                 # found it
                 foundPlugin = True
 
-                LOGGER.info("executing requested plugin: %s", pluginName)
+                LOGGER.info("executing requested plugin: %s", plugin_name)
 
                 # execute plugin
                 pluginResults = plugin.plugin_object.scan()
@@ -429,14 +396,14 @@ def scan(pluginName):
 
         # check if specific plugin was specified and found
         # ->if so, can bail
-        if pluginName and foundPlugin:
+        if plugin_name and foundPlugin:
 
             # bail
             break
 
     # sanity check
     # -> make sure if a specific plugin was specified, it was found/exec'd
-    if pluginName and not foundPlugin:
+    if plugin_name and not foundPlugin:
 
         LOGGER.error("did not find requested plugin")
 
