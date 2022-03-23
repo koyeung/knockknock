@@ -10,6 +10,7 @@ unclassified items
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -17,6 +18,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # for output, item name
 UNCLASSIFIED_NAME = "Unclassified Items"
@@ -40,8 +43,7 @@ class scan(IPlugin):
         # reported path
         reportedPaths = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results
         results = self.initResults(UNCLASSIFIED_NAME, UNCLASSIFIED_DESCRIPTION)

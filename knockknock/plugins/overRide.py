@@ -1,12 +1,13 @@
 __author__ = "patrick w"
 
 """
-	overrides provide a way for both sandboxed applications and launch daemons/agents to be automatically executed
+    overrides provide a way for both sandboxed applications and launch daemons/agents to be automatically executed
 
-	this plugin scans the OS's override directory and parses files to overridden items set for auto execution
+    this plugin scans the OS's override directory and parses files to overridden items set for auto execution
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -14,6 +15,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # (base) directory that has overrides for launch* and apps
 OVERRIDES_DIRECTORIES = [
@@ -61,8 +64,7 @@ class scan(IPlugin):
         # sandbox login items
         sandboxedLoginItems = None
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(OVERRIDES_NAME, OVERRIDES_DESCRIPTION)

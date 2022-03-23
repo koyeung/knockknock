@@ -10,6 +10,7 @@ rc script
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -17,6 +18,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import command, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # various rc scripts
 RC_SCRIPTS = ["rc.common", "rc.installer_cleanup", "rc.cleanup"]
@@ -43,8 +46,7 @@ class scan(IPlugin):
         # commands
         commands = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(RC_SCRIPT_NAME, RC_SCRIPT_DESCRIPTION)

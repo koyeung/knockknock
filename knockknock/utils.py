@@ -1,47 +1,24 @@
 __author__ = "patrick"
 
 import hashlib
+import logging
 import os
 import platform
 import plistlib
 import re
 import subprocess
-import sys
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Tuple
 
 import Foundation
 import Security
 from Foundation import NSURL, NSBundle, NSString
 from Security import errSecSuccess
 
-# support OS X version (major)
-SUPPORTED_OS_VERSION = 10
+LOGGER = logging.getLogger(__name__)
 
-# min supported OS X version (minor)
-# ->10.9
-MIN_OS_VERSION_MINOR = 9
-
-# max supported OS X version (minor)
-# ->10.11
-MAX_OS_VERSION_MINOR = 11
-
-# global verbose/logging flag
-verbose = False
-
-# logging mode; info
-MODE_INFO = "INFO"
-
-# logging mode; warning
-MODE_WARN = "WARNING"
-
-# logging mode; error
-MODE_ERROR = "ERROR"
-
-# path to security framework
-# ->for validating signatures
-SECURITY_FRAMEWORK = (
-    "/System/Library/Frameworks/Security.framework/Versions/Current/Security"
-)
+# minimum supported macOS version
+_MIN_OS_VERSION = (12, 0)
 
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013
@@ -55,110 +32,35 @@ PROCESS_TYPE_BG = 0x0
 # process type, dock
 PROCESS_TYPE_DOCK = 0x1
 
-
-# load python <-> Objc bindings
-# ->might fail if non-Apple version of python is being used
-def loadObjcBindings():
-
-    # flag indicating load OK
-    load_ok = False
-
-    # wrap
-    try:
-
-        # attempt imports
-        import Foundation
-        import objc
-
-        # set flag
-        # ->load OK
-        load_ok = True
-
-    # imports not found
-    except ImportError as e:
-
-        # set flag
-        # ->load not OK
-        load_ok = False
-
-    return load_ok
+# directory containing plugins
+PLUGIN_DIR = "plugins"
 
 
-# set verbose
-def initLogging(verbosity):
+def is_supported_os():
+    """Check if OS version is supported."""
+    version = get_os_version()
 
-    # global flag
-    global verbose
+    major, minor = version.split(".")[:2]
 
-    # set global flag
-    verbose = verbosity
-
-    return True
+    return (int(major), int(minor)) >= _MIN_OS_VERSION
 
 
-# display msgs
-def logMessage(mode, msg, shouldSupress=None):
-
-    # always display warnings and errors
-    if (MODE_WARN == mode or MODE_ERROR == mode) and not shouldSupress:
-
-        # display it
-        sys.stderr.write("%s: %s\n" % (mode, msg))
-
-    # in verbose mode
-    # ->always display everything
-    elif verbose:
-
-        # display it
-        print("%s: %s" % (mode, msg))
-
-    return
-
-
-# check if OS version is supported
-def isSupportedOS():
-
-    # flag indicating supported OS
-    supportedOS = False
-
-    # get OS version
-    version = getOSVersion()
-
-    # extract major
-    versionMajor = int(version[0])
-
-    # extract minor
-    versionMinor = int(version[1])
-
-    # first check major version
-    # ->just OS X (10)
-    if SUPPORTED_OS_VERSION == versionMajor:
-
-        # make sure minor version is in between min and max
-        # ->OS 10.9 thru 10.10
-        if MIN_OS_VERSION_MINOR <= versionMinor <= MAX_OS_VERSION_MINOR:
-
-            # supported
-            supportedOS = True
-
-    return supportedOS
-
-
-# get OS X version
-# ->returns is an list, major, minor, etc
-def getOSVersion():
-
+def get_os_version() -> str:
+    """Return macOS version as string, e.g. 12.3."""
     # get version (as string)
     version, _, _ = platform.mac_ver()
 
-    return version.split(".")
+    return version
 
 
-# get the base directory of KnockKnock
-def getKKDirectory():
+def get_kk_directory() -> Path:
+    """Get path of KnockKnock directory."""
+    return Path(__file__).parent
 
-    # return script's directory
-    return os.path.dirname(os.path.realpath(__file__)) + "/"
+
+def get_plugins_directory() -> Path:
+    """Get path of plugin directory."""
+    return get_kk_directory() / PLUGIN_DIR
 
 
 # load a bundle's Info.plist
@@ -401,27 +303,19 @@ def checkSignature(file: str):
         path, Security.kSecCSDefaultFlags, None
     )
     if result != errSecSuccess:
-        # supress flag
-        # -> for non-r00t users want to supresss this error
-        should_supress = False
 
         # when user isn't r00t and error is accessed denied
-        # ->treat error as just an info warning (addresses issue of '/usr/sbin/cupsd')
-        if (0 != os.geteuid()) and (result == kPOSIXErrorEACCES):
-
-            # supress in non-verbose mode
-            # ->overrides default behavior of MODE_WARN
-            should_supress = True
-
-        # dbg msg
-        # ->note: uses log mode
-        logMessage(
-            MODE_ERROR,
-            "SecStaticCodeCreateWithPath('%s') failed with %d" % (path, result),
-            should_supress,
+        # ->treat error as just an INFO (addresses issue of '/usr/sbin/cupsd')
+        log_level = (
+            logging.INFO
+            if (0 != os.geteuid()) and (result == kPOSIXErrorEACCES)
+            else logging.WARNING
         )
 
-        # bail
+        LOGGER.log(
+            log_level, "SecStaticCodeCreateWithPath('%s') failed with %d", path, result
+        )
+
         return not errSecSuccess, None
 
     # check signature
@@ -465,13 +359,7 @@ def checkSignature(file: str):
 
         # check result
         if result != errSecSuccess:
-
-            # err msg
-            logMessage(
-                MODE_ERROR, "SecCodeCopySigningInformation() failed with %d" % result
-            )
-
-            # bail
+            LOGGER.error("SecCodeCopySigningInformation() failed with %d", result)
             return not errSecSuccess, None
 
         # get cert chain from dictionary
@@ -665,7 +553,7 @@ def getInstalledApps():
     ]
 
     # on newer OS's (10.9+) system_profiler supports a timeout
-    if int(getOSVersion()[1]) >= 9:
+    if int(get_os_version()[1]) >= 9:
 
         # add timeout
         commandLine.extend(["-timeout", "60"])

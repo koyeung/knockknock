@@ -20,7 +20,7 @@ class Command:
 
         # init whitelist flag
         # ->simply set to True if command is list of whitelisted commands
-        self.isWhitelisted = self.command in whitelist.whitelistedCommands
+        self.isWhitelisted = self.command in whitelist.get_command_whitelist()
 
         return
 

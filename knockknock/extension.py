@@ -50,7 +50,7 @@ class Extension:
 
         # init whitelist flag
         whitelistedSearch = self.extensionID if self.extensionID != None else self.path
-        self.isWhitelisted = whitelistedSearch in whitelist.whitelistedExtensions
+        self.isWhitelisted = whitelistedSearch in whitelist.get_extension_whitelist()
 
         return
 

@@ -10,6 +10,7 @@ authorization plugin
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -17,6 +18,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directories where auth plugins live
 AUTH_PLUGIN_DIRECTORIES = [
@@ -46,17 +49,14 @@ class scan(IPlugin):
         # auth plugins
         authPlugins = []
 
-        # dbg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(AUTH_PLUGIN_NAME, AUTH_PLUGIN_DESCRIPTION)
 
         # get all files in auth plugin directories
         for authPluginDir in AUTH_PLUGIN_DIRECTORIES:
-
-            # dbg
-            utils.logMessage(utils.MODE_INFO, "scanning %s" % authPluginDir)
+            LOGGER.info("scanning %s", authPluginDir)
 
             # get auth plugins
             authPlugins.extend(glob.glob(authPluginDir + "*"))

@@ -6,6 +6,7 @@ __author__ = "patrick w"
     this plugin (which should be run as root) parses the login/logout plist file to extract any such hooks
 """
 
+import logging
 import os
 
 # plugin framwork import
@@ -13,6 +14,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import command, file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # login window directories
 LOGIN_WINDOW_FILES = [
@@ -49,8 +52,7 @@ class scan(IPlugin):
         # results
         results = []
 
-        # dbg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results
         # ->for for login hook

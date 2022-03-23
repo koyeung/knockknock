@@ -1,9 +1,13 @@
 __author__ = "patrick"
 
+import logging
 import os
+from pathlib import Path
 
 # project imports
 from . import utils, whitelist
+
+LOGGER = logging.getLogger(__name__)
 
 
 class File:
@@ -54,10 +58,11 @@ class File:
 
         # check if its whitelisted
         # ->path is key
-        if self.path in whitelist.whitelistedFiles:
+        whitelisted_files = whitelist.get_file_whitelist()
+        if self.path in whitelisted_files:
 
             # check if hash is in white list
-            self.isWhitelisted = self.hash in whitelist.whitelistedFiles[self.path]
+            self.isWhitelisted = self.hash in whitelisted_files[self.path]
 
         # init
         self.signatureStatus = None
@@ -172,6 +177,10 @@ class File:
             path = self.bundle
 
         # check the signature
+        if not Path(path).exists():
+            LOGGER.warning("path %s not exists", path)
+            return
+
         (status, signingInfo) = utils.checkSignature(path)
 
         # on success

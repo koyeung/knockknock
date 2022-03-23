@@ -10,6 +10,7 @@ spotlight importer
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -17,6 +18,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directories where importers live
 IMPORTERS_DIRECTORIES = [
@@ -47,8 +50,7 @@ class scan(IPlugin):
         # importers
         importers = []
 
-        # dbg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(IMPORTER_NAME, IMPORTER_DESCRIPTION)
@@ -56,8 +58,7 @@ class scan(IPlugin):
         # get all files in importer directories
         for importerDir in IMPORTERS_DIRECTORIES:
 
-            # dbg
-            utils.logMessage(utils.MODE_INFO, "scanning %s" % importerDir)
+            LOGGER.info("scanning %s", importerDir)
 
             # get imports
             importers.extend(glob.glob(importerDir + "*"))
