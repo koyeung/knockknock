@@ -8,7 +8,7 @@ import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import Foundation
 import Security
@@ -17,17 +17,8 @@ from Security import errSecSuccess
 
 LOGGER = logging.getLogger(__name__)
 
-
-# support OS X version (major)
-SUPPORTED_OS_VERSION = 10
-
-# min supported OS X version (minor)
-# ->10.9
-MIN_OS_VERSION_MINOR = 9
-
-# max supported OS X version (minor)
-# ->10.11
-MAX_OS_VERSION_MINOR = 11
+# minimum supported macOS version
+_MIN_OS_VERSION = (12, 0)
 
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013
@@ -45,43 +36,21 @@ PROCESS_TYPE_DOCK = 0x1
 PLUGIN_DIR = "plugins"
 
 
-# check if OS version is supported
-def isSupportedOS():
+def is_supported_os():
+    """Check if OS version is supported."""
+    version = get_os_version()
 
-    # flag indicating supported OS
-    supportedOS = False
+    major, minor = version.split(".")[:2]
 
-    # get OS version
-    version = getOSVersion()
-
-    # extract major
-    versionMajor = int(version[0])
-
-    # extract minor
-    versionMinor = int(version[1])
-
-    # first check major version
-    # ->just OS X (10)
-    if SUPPORTED_OS_VERSION == versionMajor:
-
-        # make sure minor version is in between min and max
-        # ->OS 10.9 thru 10.10
-        if MIN_OS_VERSION_MINOR <= versionMinor <= MAX_OS_VERSION_MINOR:
-
-            # supported
-            supportedOS = True
-
-    return supportedOS
+    return (int(major), int(minor)) >= _MIN_OS_VERSION
 
 
-# get OS X version
-# ->returns is an list, major, minor, etc
-def getOSVersion():
-
+def get_os_version() -> str:
+    """Return macOS version as string, e.g. 12.3."""
     # get version (as string)
     version, _, _ = platform.mac_ver()
 
-    return version.split(".")
+    return version
 
 
 def get_kk_directory() -> Path:
@@ -584,7 +553,7 @@ def getInstalledApps():
     ]
 
     # on newer OS's (10.9+) system_profiler supports a timeout
-    if int(getOSVersion()[1]) >= 9:
+    if int(get_os_version()[1]) >= 9:
 
         # add timeout
         commandLine.extend(["-timeout", "60"])

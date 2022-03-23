@@ -198,15 +198,15 @@ def _init_knockknock(args) -> None:
         LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
         return False
 
-    # check version (Mavericks/Yosemite for now)
+    # check version
     # ->this isn't a fatal error for now, so just log a warning for unsupported versions
-    if not utils.isSupportedOS():
+    if not utils.is_supported_os():
         LOGGER.warning(
-            "%s is not an officially supported OS X version (your mileage may vary)",
-            ".".join(utils.getOSVersion()),
+            "%s is not an officially supported macOS version (your mileage may vary)",
+            utils.get_os_version(),
         )
     else:
-        LOGGER.info("%s is a supported OS X version", ".".join(utils.getOSVersion()))
+        LOGGER.info("%s is a supported macOS version", utils.get_os_version())
 
     # giving warning about r00t
     if 0 != os.geteuid():
