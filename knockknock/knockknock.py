@@ -31,9 +31,11 @@ def knocknock():
         # ->will bail (with msg) if usage is incorrect
         args = _parse_args()
 
-        # init
-        # ->logging, plugin manager, etc
-        plugin_manager = _init_knockknock(args)
+        _init_knockknock(args)
+
+        plugin_manager = _get_plugin_manager()
+        LOGGER.info("initialized plugin manager")
+
         LOGGER.info("initialization complete")
 
         # list plugins and bail
@@ -182,7 +184,12 @@ def allHashes(results):
 
 
 # initialize knockknock
-def _init_knockknock(args) -> PluginManager:
+def _init_knockknock(args) -> None:
+
+    if args.verbosity:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    LOGGER.info("initialized logging")
 
     # get python version
     python_version = sys.version_info
@@ -190,11 +197,6 @@ def _init_knockknock(args) -> PluginManager:
     if (python_version.major, python_version.minor) < (3, 8):
         LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
         return False
-
-    if args.verbosity:
-        logging.getLogger().setLevel(logging.DEBUG)
-
-    LOGGER.info("initialized logging")
 
     # check version (Mavericks/Yosemite for now)
     # ->this isn't a fatal error for now, so just log a warning for unsupported versions
@@ -206,14 +208,11 @@ def _init_knockknock(args) -> PluginManager:
     else:
         LOGGER.info("%s is a supported OS X version", ".".join(utils.getOSVersion()))
 
-    plugin_manager = _get_plugin_manager()
-    LOGGER.info("initialized plugin manager")
-
     # giving warning about r00t
     if 0 != os.geteuid():
         LOGGER.info("not running as r00t...some results may be missed (e.g. CronJobs)")
 
-    return plugin_manager
+    return
 
 
 # parse args
