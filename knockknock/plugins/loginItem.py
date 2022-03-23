@@ -6,6 +6,7 @@ __author__ = "patrick w"
 	this plugin parses the undocumented contents of all users' com.apple.loginitems.plist to find login items
 """
 
+import logging
 import os
 
 # plugin framework import
@@ -13,6 +14,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directory that has login items
 # ->this is expanded for all user's on the system
@@ -43,8 +46,7 @@ class scan(IPlugin):
         # login items files
         loginItems = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(LOGIN_ITEM_NAME, LOGIN_ITEM_DESCRIPTION)
@@ -56,8 +58,7 @@ class scan(IPlugin):
             # wrap
             try:
 
-                # dbg msg
-                utils.logMessage(utils.MODE_INFO, "scanning %s" % userLoginItems)
+                LOGGER.info("scanning %s", userLoginItems)
 
                 # load plist and check
                 plistData = utils.loadPlist(userLoginItems)

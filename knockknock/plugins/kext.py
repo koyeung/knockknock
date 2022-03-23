@@ -9,12 +9,15 @@ kernel extensions (kexts)
 """
 
 import glob
+import logging
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directories where kexts live
 KEXT_DIRECTORIES = ["/System/Library/Extensions/", "/Library/Extensions/"]
@@ -41,8 +44,7 @@ class scan(IPlugin):
         # kexts
         kexts = []
 
-        # dbg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(KEXT_NAME, KEXT_DESCRIPTION)
@@ -50,8 +52,7 @@ class scan(IPlugin):
         # get all files in kext directories
         for kextDir in KEXT_DIRECTORIES:
 
-            # dbg
-            utils.logMessage(utils.MODE_INFO, "scanning %s" % kextDir)
+            LOGGER.info("scanning %s", kextDir)
 
             # get kexts
             kexts.extend(glob.glob(kextDir + "*"))

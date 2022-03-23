@@ -27,13 +27,15 @@ dylibs (loaded via DYLD_INSERT_LIBRARIES)
 # /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -v -f /Applications/ApplicationName.app
 
 import glob
-import os
+import logging
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directories for launch daemons and agents
 LAUNCH_ITEMS_DIRECTORIES = [
@@ -74,8 +76,7 @@ class scan(IPlugin):
         # results
         results = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results
         results = self.initResults(
@@ -113,8 +114,7 @@ def scanLaunchItems(directories):
     # get all files (plists) in launch daemon/agent directories
     for directory in directories:
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "scanning %s" % directory)
+        LOGGER.info("scanning %s", directory)
 
         # get launch daemon/agent plist
         launchItems.extend(glob.glob(directory + "*"))
@@ -131,11 +131,7 @@ def scanApplications():
     # app plists
     appPlists = []
 
-    # dbg msg
-    utils.logMessage(
-        utils.MODE_INFO,
-        "generating list of all installed apps (this may take some time)",
-    )
+    LOGGER.info("generating list of all installed apps (this may take some time)")
 
     # get all installed apps
     installedApps = utils.getInstalledApps()

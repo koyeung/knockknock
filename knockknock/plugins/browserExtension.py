@@ -11,10 +11,13 @@ browser extensions
 
 import glob
 import json
+import logging
 import os
 import traceback
 
-import LaunchServices
+import CoreServices
+
+LOGGER = logging.getLogger(__name__)
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
@@ -67,8 +70,7 @@ class scan(IPlugin):
         # results
         results = []
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # get list of installed browsers
         browsers = self.getInstalledBrowsers()
@@ -80,10 +82,7 @@ class scan(IPlugin):
             # scan Safari extensions
             if "Safari.app" in browser:
 
-                # dbg msg
-                utils.logMessage(
-                    utils.MODE_INFO, "safari installed, scanning for extensions"
-                )
+                LOGGER.info("safari installed, scanning for extensions")
 
                 # init results
                 results.append(
@@ -98,10 +97,7 @@ class scan(IPlugin):
             # scan Chrome extensions
             if "Google Chrome.app" in browser:
 
-                # dbg msg
-                utils.logMessage(
-                    utils.MODE_INFO, "chrome installed, scanning for extensions"
-                )
+                LOGGER.info("chrome installed, scanning for extensions")
 
                 # init results
                 results.append(
@@ -116,10 +112,7 @@ class scan(IPlugin):
             # scan Firefox extensions
             if "Firefox.app" in browser:
 
-                # dbg msg
-                utils.logMessage(
-                    utils.MODE_INFO, "firefox installed, scanning for extensions"
-                )
+                LOGGER.info("firefox installed, scanning for extensions")
 
                 # init results
                 results.append(
@@ -144,7 +137,7 @@ class scan(IPlugin):
 
             # get list of app IDs that can handle 'https'
             # ->i.e. browsers
-            browsersIDs = LaunchServices.LSCopyAllHandlersForURLScheme("https")
+            browsersIDs = CoreServices.LSCopyAllHandlersForURLScheme("https")
 
             # app IDs to full paths to the apps
             for browserID in browsersIDs:
@@ -154,8 +147,8 @@ class scan(IPlugin):
 
                     # use LSFindApplicationForInfo to convert ID to app path
                     # returns a list, 3rd item an NSURL to the browser
-                    browserURL = LaunchServices.LSFindApplicationForInfo(
-                        LaunchServices.kLSUnknownCreator, browserID, None, None, None
+                    browserURL = CoreServices.LSFindApplicationForInfo(
+                        CoreServices.kLSUnknownCreator, browserID, None, None, None
                     )[2]
 
                     # convert the url to a filepath

@@ -9,12 +9,15 @@ cronjobs
 """
 
 import glob
+import logging
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import command, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # directory that has cron jobs
 CRON_JOB_DIRECTORY = "/private/var/at/tabs/"
@@ -44,8 +47,7 @@ class scan(IPlugin):
         # init results dictionary
         results = self.initResults(CRON_JOBS_NAME, CRON_JOBS_DESCRIPTION)
 
-        # dbg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # get all files in kext directories
         cronJobFiles.extend(glob.glob(CRON_JOB_DIRECTORY + "*"))

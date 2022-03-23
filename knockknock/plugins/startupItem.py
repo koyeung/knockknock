@@ -13,6 +13,7 @@ startup items
 """
 
 import glob
+import logging
 import os
 
 # plugin framework import
@@ -20,6 +21,8 @@ from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import file, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # base directories for startup items
 STARTUP_ITEM_BASE_DIRECTORIES = [
@@ -47,8 +50,7 @@ class scan(IPlugin):
     # invoked by core
     def scan(self):
 
-        # dbg msg
-        utils.logMessage(utils.MODE_INFO, "running scan")
+        LOGGER.info("running scan")
 
         # init results dictionary
         results = self.initResults(STARTUP_ITEM_NAME, STARTUP_ITEM_DESCRIPTION)
