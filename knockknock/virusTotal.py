@@ -15,17 +15,16 @@ from . import file
 
 LOGGER = logging.getLogger(__name__)
 
-# global dictionary of VT results
-vtResults = {}
-
 # query URL
-VT_URL = "https://www.virustotal.com/partners/sysinternals/file-reports?apikey="
+_VT_URL = "https://www.virustotal.com/partners/sysinternals/file-reports?apikey="
 
 # API key
-VT_API_KEY = "bef728a398d7b666c5fbdc6f64671161284ef49c23e270ac540ada64893b433b"
+_VT_API_KEY = "bef728a398d7b666c5fbdc6f64671161284ef49c23e270ac540ada64893b433b"
 
 
 def processResults(results):
+
+    vt_results = {}
 
     # item (files) to query
     # ->grab up to 25 before making a query!
@@ -88,8 +87,7 @@ def processResults(results):
             if 25 == len(items):
 
                 # query
-                # ->results stored in global vtResults dictionary
-                queryVT(items)
+                vt_results.update(_query_vt(items))
 
                 # reset
                 items = []
@@ -98,8 +96,7 @@ def processResults(results):
     if len(items):
 
         # query
-        # ->results stored in global vtResults dictionary
-        queryVT(items)
+        vt_results.update(_query_vt(items))
 
     # (re)iterate over all detected items (results)
     # ->any that were queried add the VT results
@@ -118,20 +115,21 @@ def processResults(results):
                 continue
 
             # skip items that didn't get a response
-            if startupObj.hash not in vtResults:
+            if startupObj.hash not in vt_results:
 
                 # skip
                 continue
 
             # add VT results to item
-            startupObj.vtRatio = vtResults[startupObj.hash]
+            startupObj.vtRatio = vt_results[startupObj.hash]
 
-    return vtResults
+    return vt_results
 
 
-# query
-# ->results stored in global vtResults dictionary
-def queryVT(items):
+def _query_vt(items):
+    """Query vt."""
+
+    query_results = {}
 
     # headers
     requestHeaders = {}
@@ -147,7 +145,7 @@ def queryVT(items):
 
         # build request
         request = urllib.request.Request(
-            VT_URL + VT_API_KEY,
+            _VT_URL + _VT_API_KEY,
             json.dumps(items, indent=4).encode("utf-8"),
             headers=requestHeaders,
         )
@@ -166,7 +164,7 @@ def queryVT(items):
             for item in vtResponse["data"]:
 
                 # process
-                parseResult(item)
+                _put_item_to_results(item, results=query_results)
 
     # exceptions
     # ->ignore (likely network related)
@@ -174,15 +172,12 @@ def queryVT(items):
         LOGGER.exception("failed to query virustotal")
         pass
 
-    return
+    return query_results
 
 
 # process a single result
 #  ->save parse/save info
-def parseResult(item):
-
-    # global
-    global vtResults
+def _put_item_to_results(item, /, *, results) -> None:
 
     # extract found flag
     found = item["found"]
@@ -195,12 +190,12 @@ def parseResult(item):
     if found:
 
         # save detection ratio
-        vtResults[hash] = item["detection_ratio"]
+        results[hash] = item["detection_ratio"]
 
     # otherwise indicate it wasn't found
     else:
 
         # not found
-        vtResults[hash] = "not found"
+        results[hash] = "not found"
 
     return
