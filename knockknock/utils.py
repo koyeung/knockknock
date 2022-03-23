@@ -90,7 +90,8 @@ def get_kk_directory() -> Path:
 
 
 def get_plugins_directory() -> Path:
-    return get_kk_directory().parent / PLUGIN_DIR
+    """Get path of plugin directory."""
+    return get_kk_directory() / PLUGIN_DIR
 
 
 # load a bundle's Info.plist

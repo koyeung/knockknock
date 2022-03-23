@@ -1,8 +1,0 @@
-[Core]
-Name = Restored App Scanner
-Module = restoredApp
-
-[Documentation]
-Author = Patrick W
-Version = 1.0
-Description = Plugin that scans for apps that will automatically be restored
