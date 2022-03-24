@@ -1,5 +1,6 @@
 __author__ = "patrick"
 
+import collections
 import hashlib
 import logging
 import os
@@ -8,7 +9,7 @@ import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional
 
 import Foundation
 import Security
@@ -16,9 +17,6 @@ from Foundation import NSURL, NSBundle, NSString
 from Security import errSecSuccess
 
 LOGGER = logging.getLogger(__name__)
-
-# minimum supported macOS version
-_MIN_OS_VERSION = (12, 0)
 
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013
@@ -36,21 +34,16 @@ PROCESS_TYPE_DOCK = 0x1
 PLUGIN_DIR = "plugins"
 
 
-def is_supported_os():
-    """Check if OS version is supported."""
-    version = get_os_version()
-
-    major, minor = version.split(".")[:2]
-
-    return (int(major), int(minor)) >= _MIN_OS_VERSION
-
-
-def get_os_version() -> str:
-    """Return macOS version as string, e.g. 12.3."""
+def get_os_version() -> NamedTuple:
+    """Return major and minor version of macOS."""
     # get version (as string)
     version, _, _ = platform.mac_ver()
+    major, minor = version.split(".")[:2]
 
-    return version
+    return collections.namedtuple("Version", ["major", "minor"])(
+        major=int(major),
+        minor=int(minor),
+    )
 
 
 def get_kk_directory() -> Path:

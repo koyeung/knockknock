@@ -16,6 +16,9 @@ from . import file, output, utils, virusTotal, whitelist
 
 LOGGER = logging.getLogger(__name__)
 
+#: minimum supported macOS version
+_MIN_OS_VERSION = (12, 0)
+
 
 # main interface
 def knocknock():
@@ -198,15 +201,15 @@ def _init_knockknock(args) -> None:
         LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
         return False
 
-    # check version
-    # ->this isn't a fatal error for now, so just log a warning for unsupported versions
-    if not utils.is_supported_os():
-        LOGGER.warning(
-            "%s is not an officially supported macOS version (your mileage may vary)",
-            utils.get_os_version(),
+    # check macOS version
+    if (os_version := utils.get_os_version()) >= _MIN_OS_VERSION:
+        LOGGER.info(
+            f"{os_version.major}.{os_version.minor} is a supported macOS version"
         )
     else:
-        LOGGER.info("%s is a supported macOS version", utils.get_os_version())
+        LOGGER.warning(
+            f"{os_version.major}.{os_version.minor} is not an officially supported macOS version (your mileage may vary)",
+        )
 
     # giving warning about r00t
     if 0 != os.geteuid():
