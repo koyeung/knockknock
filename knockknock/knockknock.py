@@ -274,7 +274,9 @@ def _get_plugin_manager() -> PluginManager:
     assert plugin_manager, "failed to create plugin manager"
 
     # configure where plugins could be found
-    plugin_manager.getPluginLocator().setPluginPlaces([str(utils.get_plugins_directory())])
+    plugin_manager.getPluginLocator().setPluginPlaces(
+        [str(utils.get_plugins_directory())]
+    )
 
     # get all plugins
     plugin_manager.collectPlugins()
