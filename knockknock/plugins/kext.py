@@ -62,7 +62,7 @@ class scan(IPlugin):
         for kextBundle in kexts:
 
             # skip kext bundles that don't have kext's
-            if not utils.getBinaryFromBundle(kextBundle):
+            if not utils.get_binary_from_bundle(kextBundle):
 
                 # next!
                 continue

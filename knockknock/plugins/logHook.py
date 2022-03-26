@@ -63,13 +63,13 @@ class scan(IPlugin):
         results.append(self.initResults(LOGOUT_HOOK_NAME, LOGOUT_HOOK_DESCRIPTION))
 
         # expand all login/out files
-        logInOutFiles = utils.expandPaths(LOGIN_WINDOW_FILES)
+        logInOutFiles = utils.expand_paths(LOGIN_WINDOW_FILES)
 
         # scan each file
         for logInOutFile in logInOutFiles:
 
             # load plist
-            plistData = utils.loadPlist(logInOutFile)
+            plistData = utils.load_plist(logInOutFile)
 
             # make sure plist loaded
             if plistData:

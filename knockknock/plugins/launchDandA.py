@@ -108,7 +108,7 @@ class scan(IPlugin):
 
         # expand directories
         # ->ensures '~'s are expanded to all user's
-        directories = utils.expandPaths(directories)
+        directories = utils.expand_paths(directories)
 
         # get all files (plists) in launch daemon/agent directories
         for directory in directories:
@@ -150,7 +150,7 @@ class scan(IPlugin):
                 programArguments = []
 
                 # load plist
-                plistData = utils.loadPlist(plist)
+                plistData = utils.load_plist(plist)
 
                 # skip files that couldn't be loaded
                 if not plistData:
@@ -318,7 +318,7 @@ class scan(IPlugin):
                 LOGGER.info("opening %s", overide)
 
                 # load plist and check
-                plistData = utils.loadPlist(overide)
+                plistData = utils.load_plist(overide)
                 if not plistData:
 
                     # skip

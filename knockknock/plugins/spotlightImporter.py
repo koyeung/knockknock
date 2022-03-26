@@ -75,7 +75,7 @@ class scan(IPlugin):
                 continue
 
             # skip any invalid bundles
-            if not utils.getBinaryFromBundle(importerBundle):
+            if not utils.get_binary_from_bundle(importerBundle):
 
                 # skip
                 continue

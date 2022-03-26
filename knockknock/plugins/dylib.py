@@ -109,7 +109,7 @@ def scanLaunchItems(directories):
 
     # expand directories
     # ->ensures '~'s are expanded to all user's
-    directories = utils.expandPaths(directories)
+    directories = utils.expand_paths(directories)
 
     # get all files (plists) in launch daemon/agent directories
     for directory in directories:
@@ -134,7 +134,7 @@ def scanApplications():
     LOGGER.info("generating list of all installed apps (this may take some time)")
 
     # get all installed apps
-    installedApps = utils.getInstalledApps()
+    installedApps = utils.get_installed_apps()
 
     # sanity check
     # ->using system_profiler (to get installed apps) can timeout/throw exception, etc
@@ -153,7 +153,7 @@ def scanApplications():
             continue
 
         # get/load app's Info.plist
-        plist = utils.loadInfoPlist(app["path"])
+        plist = utils.load_info_plist(app["path"])
 
         # skip apps that don't have Info.plist
         if not plist:
@@ -196,7 +196,7 @@ def scanPlists(plists, key, isLoaded=False):
                 plistPath = plist
 
                 # load it and check
-                loadedPlist = utils.loadPlist(plist)
+                loadedPlist = utils.load_plist(plist)
                 if not loadedPlist:
 
                     # skip
@@ -210,7 +210,7 @@ def scanPlists(plists, key, isLoaded=False):
                 loadedPlist = plist
 
                 # get path
-                plistPath = utils.getPathFromPlist(loadedPlist)
+                plistPath = utils.get_path_from_plist(loadedPlist)
 
             # check for env key
             # -> will be either 'EnvironmentVariables' or 'LSEnvironment' depending if launch item or app

@@ -73,7 +73,7 @@ class scan(IPlugin):
                 continue
 
             # skip any invalid bundles
-            if not utils.getBinaryFromBundle(authPlugin):
+            if not utils.get_binary_from_bundle(authPlugin):
 
                 # skip
                 continue

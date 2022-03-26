@@ -53,7 +53,7 @@ class scan(IPlugin):
 
         # get all commands in launchd.conf
         # ->note, commands in functions will be ignored...
-        commands = utils.parseBashFile(LAUNCHD_CONF_FILE)
+        commands = utils.parse_bash_file(LAUNCHD_CONF_FILE)
 
         # iterate over all commands
         # ->instantiate command obj and save into results

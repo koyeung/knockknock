@@ -53,7 +53,7 @@ class scan(IPlugin):
 
         # process
         # ->open file and read each line
-        for userLoginItems in utils.expandPath(LOGIN_ITEM_FILE):
+        for userLoginItems in utils.expand_path(LOGIN_ITEM_FILE):
 
             # wrap
             try:
@@ -61,7 +61,7 @@ class scan(IPlugin):
                 LOGGER.info("scanning %s", userLoginItems)
 
                 # load plist and check
-                plistData = utils.loadPlist(userLoginItems)
+                plistData = utils.load_plist(userLoginItems)
 
                 # extract sessions items
                 sesssionItems = plistData["SessionItems"]

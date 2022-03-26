@@ -49,14 +49,14 @@ class scan(IPlugin):
         results = self.initResults(UNCLASSIFIED_NAME, UNCLASSIFIED_DESCRIPTION)
 
         # get all running processes
-        processes = utils.getProcessList()
+        processes = utils.get_process_list()
 
         # set processes top parent
         # ->well, besides launchd (pid: 0x1)
-        utils.setFirstParent(processes)
+        utils.set_first_parent(processes)
 
         # add process type (dock or not)
-        utils.setProcessType(processes)
+        utils.set_process_type(processes)
 
         # get all procs that don't have a dock icon
         # ->assume these aren't started by the user

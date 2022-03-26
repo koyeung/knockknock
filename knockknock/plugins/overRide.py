@@ -83,7 +83,7 @@ class scan(IPlugin):
             try:
 
                 # load plist and check
-                plistData = utils.loadPlist(override)
+                plistData = utils.load_plist(override)
 
                 # skip any plist files that couldn't be loaded
                 if not plistData:
@@ -281,7 +281,7 @@ class scan(IPlugin):
         try:
 
             # expand launch daemons and agents directories
-            directories = utils.expandPaths(LAUNCH_D_AND_A_DIRECTORIES)
+            directories = utils.expand_paths(LAUNCH_D_AND_A_DIRECTORIES)
 
             # attempt to find bundle ID in any of the directories
             for directory in directories:
@@ -296,7 +296,7 @@ class scan(IPlugin):
                     continue
 
                 # load plist
-                plistData = utils.loadPlist(plistPath)
+                plistData = utils.load_plist(plistPath)
 
                 # check if 'ProgramArguments' exists
                 if "ProgramArguments" in plistData:

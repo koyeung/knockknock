@@ -181,7 +181,7 @@ class scan(IPlugin):
 
         # get list of all chrome's preferences file
         # ->these contain JSON w/ info about all extensions
-        safariExtensionFiles = utils.expandPath(SAFARI_EXTENSION_DIRECTORY)
+        safariExtensionFiles = utils.expand_path(SAFARI_EXTENSION_DIRECTORY)
 
         # parse each for extensions
         for safariExtensionFile in safariExtensionFiles:
@@ -190,7 +190,7 @@ class scan(IPlugin):
             try:
 
                 # load extension file
-                plistData = utils.loadPlist(safariExtensionFile)
+                plistData = utils.load_plist(safariExtensionFile)
 
                 # ensure data looks ok
                 if not plistData or "Installed Extensions" not in plistData:
@@ -259,7 +259,7 @@ class scan(IPlugin):
 
         # get list of all chrome's preferences file
         # ->these contain JSON w/ info about all extensions
-        chromePreferences = utils.expandPaths(CHROME_DIRECTORIES)
+        chromePreferences = utils.expand_paths(CHROME_DIRECTORIES)
 
         # parse each for extensions
         for chromePreferenceFile in chromePreferences:
@@ -340,7 +340,7 @@ class scan(IPlugin):
 
         # get list of all firefox's profile directories
         # ->these contain profiles, that in turn, contain a files ('addons.json/extensions.json') about the extensions
-        firefoxProfileDirectories = utils.expandPath(FIREFOX_PROFILE_DIRECTORY)
+        firefoxProfileDirectories = utils.expand_path(FIREFOX_PROFILE_DIRECTORY)
 
         # iterate over all addons and extensions files in profile directories
         # ->extact all addons and extensions

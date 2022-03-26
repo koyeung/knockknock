@@ -57,7 +57,7 @@ class scan(IPlugin):
             # get all commands in script file
             # ->note, commands in functions will be ignored...
             #   of course, if the function is invoked, this invocation will be displayed
-            commands = utils.parseBashFile(os.path.join("/etc", rcScript))
+            commands = utils.parse_bash_file(os.path.join("/etc", rcScript))
 
             # iterate over all commands
             # ->instantiate command obj and save into results

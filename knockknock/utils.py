@@ -1,25 +1,31 @@
+"""Provide utilities functions."""
 __author__ = "patrick"
 
+# names are lazily loaded in pyobjc modules
+# pylint: disable=no-name-in-module,no-member
+
 import collections
+import functools
 import hashlib
 import logging
 import os
+import os.path
 import platform
 import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import Iterable, List, NamedTuple, Optional
 
 import Foundation
 import Security
-from Foundation import NSURL, NSBundle, NSString
+from Foundation import NSURL, NSBundle, NSDictionary, NSString
 from Security import errSecSuccess
 
 LOGGER = logging.getLogger(__name__)
 
 # from (carbon) MacErrors.h
-kPOSIXErrorEACCES = 100013
+kPOSIXErrorEACCES = 100013  # pylint: disable=invalid-name
 
 # base directory for users
 USER_BASE_DIRECTORY = "/Users/"
@@ -56,227 +62,109 @@ def get_plugins_directory() -> Path:
     return get_kk_directory() / PLUGIN_DIR
 
 
-# load a bundle's Info.plist
-def loadInfoPlist(bundlePath):
+def load_info_plist(bundle_path):
+    """Load a bundle's Info.plist."""
+    main_bundle = NSBundle.bundleWithPath_(bundle_path)
 
-    # dictionary info
-    infoDictionary = None
-
-    # wrap
-    # ->had some issues with bundleWithPath_()
-    try:
-
-        # get main bundle
-        mainBundle = NSBundle.bundleWithPath_(bundlePath)
-        if mainBundle is not None:
-
-            # get dictionary from Info.plist
-            infoDictionary = mainBundle.infoDictionary()
-
-    # ignore
-    except:
-
-        pass
-
-    return infoDictionary
+    # get dictionary from Info.plist
+    return main_bundle.infoDictionary()
 
 
-# given a loaded plist (e.g. from a bundle)
-# ->returns the path of the Info.plist
-def getPathFromPlist(loadedPlist):
-
-    # path to plist
-    plistPath = None
-
-    # wrap
-    try:
-
-        # check for Info plist key
-        if "CFBundleInfoPlistURL" in loadedPlist:
-
-            # extract the path
-            plistPath = loadedPlist["CFBundleInfoPlistURL"].fileSystemRepresentation()
-
-    # ignore
-    except:
-
-        pass
-
-    return plistPath
+def get_path_from_plist(loaded_plist):
+    """Return path of Info.plist, given a loaded plist from a bundle."""
+    return loaded_plist["CFBundleInfoPlistURL"].fileSystemRepresentation()
 
 
-# get a bundle's executable binary
-def getBinaryFromBundle(bundlePath) -> Optional[str]:
+def get_binary_from_bundle(bundle_path) -> Optional[str]:
+    """Get a bundle's executable binary."""
+    main_bundle = NSBundle.bundleWithPath_(bundle_path)
+    binary_path = main_bundle.executablePath()
 
-    # wrap
-    # ->had some issues with bundleWithPath_()
-    try:
-
-        # get main bundle
-        mainBundle = NSBundle.bundleWithPath_(bundlePath)
-        if mainBundle is not None:
-
-            # extract executable path
-            binaryPath = mainBundle.executablePath()
-
-            return str(binaryPath) if binaryPath else None
-
-    # ignore
-    except:
-
-        pass
-
-    return None
+    return str(binary_path) if binary_path else None
 
 
-# given a list of paths, expand any '~'s into all users
-# ->returned paths are checked here to ensure they exist
-def expandPaths(paths):
+def expand_paths(paths: Iterable[str]) -> List[str]:
+    """Expand any '~'s into all users, given a list of paths.
 
-    # expanded paths
-    expandedPaths = []
+    ->returned paths are checked here to ensure they exist
+    """
+    expanded_checked_paths = []
 
-    # iterate over all paths
     for path in paths:
+        expanded_checked_paths.extend(expand_path(path))
 
-        # check if it needs expanding
-        if "~" in path:
-
-            # expand path and insert list
-            # ->expanded paths are checked inside function to ensure that they exist
-            expandedPaths.extend(expandPath(path))
-
-        # no expansion necessary
-        else:
-
-            # make sure file exist
-            if os.path.exists(path):
-
-                # add
-                expandedPaths.append(path)
-
-    return expandedPaths
+    return expanded_checked_paths
 
 
-# given a a path, expand '~' into all users
-def expandPath(path):
+def expand_path(path: str) -> List[str]:
+    """Expand '~' into all users, given a path.
 
-    # expanded paths
-    expandedPaths = []
+    ->returned paths are checked here to ensure they exist
+    """
 
-    # get all users
-    users = getUsers()
-
-    # iterate over all users
-    # ->replace '~' in provided path with user's name
-    for user in users:
-
-        # expand path
-        # ->case where path starts with '~', insert /User and user name
-        if path.startswith("~"):
-
-            # expand
-            expandedPath = USER_BASE_DIRECTORY + path.replace("~", user)
-
-        # expand path
-        # ->case where '~' is in path, just replace with user name
-        else:
-
-            # expand
-            expandedPath = path.replace("~", user)
-
+    def filter_exists(paths: Iterable[str]) -> List[str]:
         # ignore non-existant directory
-        # ->'user' might be a system account (e.g. _spotlight), so won't have 'real' directories/files
-        if not os.path.exists(expandedPath):
+        # ->'user' might be a system account (e.g. _spotlight),
+        # so won't have 'real' directories/files
+        return [path_ for path_ in paths if os.path.exists(path_)]
 
-            # skip
-            continue
+    if path.startswith("~") and not path.startswith(f"~{os.sep}"):
+        # e.g. ~username/x/y/z
+        return filter_exists([os.path.expanduser(path)])
 
-        # save expanded path
-        expandedPaths.append(expandedPath)
-
-    return expandedPaths
-
-
-# get all users
-def getUsers():
-
-    # wrap
-    try:
-
-        # init name
-        name = NSString("/Local/Default")
-
-        # init record type
-        record_type = NSString("dsRecTypeStandard:Users")
-
-        # get root session and check result
-        # ->note: pass None as first arg for default session
-        root = Foundation.ODNode.nodeWithSession_name_error_(None, name, None)
-
-        # make query and check result
-        query = Foundation.ODQuery.queryWithNode_forRecordTypes_attribute_matchType_queryValues_returnAttributes_maximumResults_error_(
-            root, record_type, None, 0, None, None, 0, None
+    if path == "~" or path.startswith(f"~{os.sep}"):
+        expanded = (
+            os.path.expanduser(path.replace("~", f"~{user}", 1))
+            for user in _get_users()
         )
+        return filter_exists(expanded)
 
-        # get results
-        results = query.resultsAllowingPartial_error_(0, None)
-
-        # name is user
-        users = [result.recordName() for result in results]
-
-        return users
-
-    # ignore exceptions
-    except Exception as e:
-
-        # ignore
-        pass
-
-    return []
+    return filter_exists([path])
 
 
-# load a plist from a file
-def loadPlist(path):
+@functools.lru_cache()
+def _get_users() -> List[str]:
+    """Get all users."""
+    name = NSString("/Local/Default")
+    # get root session and check result
+    # ->note: pass None as first arg for default session
+    root = Foundation.ODNode.nodeWithSession_name_error_(None, name, None)
 
-    # load/return
-    return Foundation.NSDictionary.dictionaryWithContentsOfFile_(path)
+    record_type = NSString("dsRecTypeStandard:Users")
+    # make query and check result
+    query = Foundation.ODQuery.queryWithNode_forRecordTypes_attribute_matchType_queryValues_returnAttributes_maximumResults_error_(  # pylint: disable=line-too-long
+        root, record_type, None, 0, None, None, 0, None
+    )
 
+    results = query.resultsAllowingPartial_error_(0, None)
 
-# determine if a bundle is a kext
-# ->checks CFBundlePackageType for 'KEXT'
-def isKext(path):
-
-    # flag indicating bundle is kext
-    bundleIsKext = False
-
-    # wrap
-    try:
-
-        # load Info.plist
-        infoPlist = loadInfoPlist(path)
-        if infoPlist is not None and "CFBundlePackageType" in infoPlist:
-
-            # extact package type
-            packageType = infoPlist["CFBundlePackageType"]
-
-            # load plist and check 'CFBundlePackageType' for 'KEXT'
-            bundleIsKext = packageType.upper() == "KEXT"
-
-    # ignore exceptions
-    except Exception as e:
-
-        # print e
-
-        # ignore
-        pass
-
-    return bundleIsKext
+    # name is user
+    return [result.recordName() for result in results]
 
 
-# check the signature of a file
-def checkSignature(file: str):
+def load_plist(path: str):
+    """Load a plist from a file."""
+    return NSDictionary.dictionaryWithContentsOfFile_(path)
 
+
+def is_kext(path):
+    """Determine if a bundle is a kext.
+
+    checks CFBundlePackageType for 'KEXT'
+    """
+    info_plist = load_info_plist(path)
+
+    if info_plist and "CFBundlePackageType" in info_plist:
+
+        package_type = info_plist["CFBundlePackageType"]
+        return package_type.upper() == "KEXT"
+
+    return False
+
+
+def check_signature(file: str):
+    """Check the signature of a file."""
+    # pylint: disable=too-many-locals
     # flag indicating is from Apple
     is_apple = False
 
@@ -386,75 +274,77 @@ def checkSignature(file: str):
     return errSecSuccess, signing_info
 
 
-# parse a bash file (yes, this is a hack and needs to be improved)
-# ->returns a list of all commands that are not within a function
-#   see http://tldp.org/LDP/abs/html/functions.html for info about bash functions
-def parseBashFile(filePath):
+def parse_bash_file(file_path):
+    """Parse a bash file.
 
+    (yes, this is a hack and needs to be improved)
+     ->returns a list of all commands that are not within a function
+    see http://tldp.org/LDP/abs/html/functions.html for info about bash functions
+    """
     # list of commands
     commands = []
 
     # flag indicating code is in function
-    inFunction = False
+    in_function = False
 
     # number of brackets
-    bracketCount = 0
+    bracket_count = 0
 
     # wrap
     try:
 
         # open
-        with open(filePath, mode="r") as file:
+        with open(file_path, mode="r") as file:  # pylint: disable=unspecified-encoding
 
             # read lines
             lines = file.readlines()
 
     # just bail on error
-    except:
+    except OSError:
 
         # bail with empty commands
         return commands
 
     # parse each line
     # ->looking for commands that aren't commented out, and that are not within a function
-    for index in range(0, len(lines)):
+    for index, line in enumerate(lines):
 
         # strip line
-        strippedLine = lines[index].strip()
+        stripped_line = line.strip()
 
         # skip blank lines
-        if not strippedLine:
+        if not stripped_line:
 
             # skip
             continue
 
         # skip comments
-        if strippedLine.startswith("#"):
+        if stripped_line.startswith("#"):
 
             # skip
             continue
 
         # keep count of '{' and '{'
-        if strippedLine.startswith("{"):
+        if stripped_line.startswith("{"):
 
             # inc
-            bracketCount += 1
+            bracket_count += 1
 
         # keep count of '{' and '{'
-        if strippedLine.startswith("}"):
+        if stripped_line.startswith("}"):
 
             # dec
-            bracketCount -= 1
+            bracket_count -= 1
 
         # check if in function
         # ->ignore all commands, though care about end of function
-        if inFunction:
+        if in_function:
 
             # check for end of function
-            if strippedLine.startswith("}") and 0 == bracketCount:
+            if stripped_line.startswith("}") and 0 == bracket_count:
 
                 # end of function
-                inFunction = False
+                in_function = False
 
             # go on
             continue
@@ -462,82 +352,83 @@ def parseBashFile(filePath):
         # check for function start
         # -> a line ends with () with { on next line
         if (
-            strippedLine.endswith("()")
+            stripped_line.endswith("()")
             and index != len(lines) - 1
             and lines[index + 1].strip().startswith("{")
         ):
 
             # entered function
-            inFunction = True
+            in_function = True
 
             # go on
             continue
 
         # check for function start
         # -> a line ends with () {
-        if "".join(strippedLine.split()).endswith("(){"):
+        if "".join(stripped_line.split()).endswith("(){"):
 
             # inc
-            bracketCount += 1
+            bracket_count += 1
 
             # entered function
-            inFunction = True
+            in_function = True
 
             # go on
             continue
 
         # ok, got a command, not in a function
-        commands.append(strippedLine)
+        commands.append(stripped_line)
 
     return commands
 
 
-def findBundles(startDirectory, pattern, depth):
-
+def find_bundles(start_directory, pattern, depth) -> List[str]:
+    """Find bundles paths."""
     # list of files
-    matchedBundles = []
+    matched_bundles = []
 
     # initial depth of starting dir
     # simply count '/'
-    initialDepth = startDirectory.count(os.path.sep)
+    initial_depth = start_directory.count(os.path.sep)
 
     # get all directories under directory
     # ->walk top down, so depth checks work
-    for root, dirnames, filenames in os.walk(startDirectory, topdown=True):
+    for root, dirnames, _ in os.walk(start_directory, topdown=True):
 
         # check depth
         # ->null out remaining dirname if depth is hit
-        if root.count(os.path.sep) - initialDepth >= depth:
+        if root.count(os.path.sep) - initial_depth >= depth:
 
             # null out
             dirnames[:] = []
 
         # filter directories
         # ->want a bundle that matches the pattern
-        for dir in dirnames:
+        for dir_ in dirnames:
 
             # full path
-            fullPath = os.path.join(root, dir)
+            full_path = os.path.join(root, dir_)
 
             # check if matches patter and is a bundle
-            if pattern in dir and Foundation.NSBundle.bundleWithPath_(fullPath):
+            if pattern in dir_ and Foundation.NSBundle.bundleWithPath_(full_path):
 
                 # save
-                matchedBundles.append(fullPath)
+                matched_bundles.append(full_path)
 
-    return matchedBundles
+    return matched_bundles
 
 
-# get all installed apps
-# ->invokes system_profiler/SPApplicationsDataType
-def getInstalledApps():
+def get_installed_apps():
+    """Get all installed apps.
 
+    ->invokes system_profiler/SPApplicationsDataType
+    """
     # list of apps
-    installedApps = None
+    installed_apps = None
 
     # command-line for system_profiler
     # ->xml, mini, etc.
-    commandLine = [
+    command_line = [
         "system_profiler",
         "SPApplicationsDataType",
         "-xml",
@@ -549,51 +440,48 @@ def getInstalledApps():
     if int(get_os_version()[1]) >= 9:
 
         # add timeout
-        commandLine.extend(["-timeout", "60"])
+        command_line.extend(["-timeout", "60"])
 
     # wrap
     try:
 
         # get info about all installed apps via 'system_profiler'
         # ->(string)output is read in as plist
-        systemProfileInfo = plistlib.readPlistFromString(
-            subprocess.check_output(commandLine)
+        system_profile_info = plistlib.readPlistFromString(
+            subprocess.check_output(command_line)
         )
 
         # get all installed apps
         # ->under '_items' key
-        installedApps = systemProfileInfo[0]["_items"]
+        installed_apps = system_profile_info[0]["_items"]
 
     # exception
-    except Exception as e:
+    except Exception:  # pylint: disable=broad-except
 
         # reset
-        installedApps = None
+        installed_apps = None
 
-    return installedApps
+    return installed_apps
 
 
-# hash (MD5) a file
-# from: http://stackoverflow.com/questions/7829499/using-hashlib-to-compute-md5-digest-of-a-file-in-python-3
-def md5sum(filename: str):
+def md5sum(filename: str) -> Optional[str]:
+    """Compute hash (MD5) of a file.
 
-    # md5 hash
-    digest = None
-
-    # wrap
+    see: https://stackoverflow.com/questions/7829499/using-hashlib-to-compute-md5-digest-of-a-file-in-python-3
+    """  # pylint: disable=line-too-long
     try:
 
         # open
-        with open(filename, mode="rb") as f:
+        with open(filename, mode="rb") as file_:
 
             # init hash
-            d = hashlib.md5()
+            digest = hashlib.md5()
 
             # read in/hash
             while True:
 
                 # read in chunk
-                buf = f.read(4096)
+                buf = file_.read(4096)
 
                 # eof?
                 if not buf:
@@ -601,38 +489,34 @@ def md5sum(filename: str):
                     break
 
                 # update
-                d.update(buf)
+                digest.update(buf)
 
             # grab hash
-            digest = str(d.hexdigest())
+            return str(digest.hexdigest())
 
-    # exception
-    except Exception as e:
-
-        # reset
-        digest = None
-
-    return digest
+    except FileNotFoundError:
+        LOGGER.warning(f"{filename=} not found; cannot compute md5sum")
+        return None
 
 
-# use 'ps' to get list of running processes
-def getProcessList():
+def get_process_list():
+    """Use 'ps' to get list of running processes."""
 
     # process info
-    processesInfo = {}
+    processes_info = {}
 
     # use ps to get process list
     # ->includes full path + args
-    psOutput = subprocess.check_output(
-        ["ps", "-ax", "-o" "pid,ppid,uid,etime,command"], encoding="utf-8"
+    ps_output = subprocess.check_output(
+        ["ps", "-ax", "-o", "pid,ppid,uid,etime,comm"], encoding="utf-8"
     )
 
     # parse/split output
     # ->note: first line is skipped as its the column headers
-    for line in psOutput.split("\n")[1:]:
+    for line in ps_output.split("\n")[1:]:
 
         # dictionary for process info
-        processInfo = {}
+        process_info = {}
 
         try:
 
@@ -647,93 +531,34 @@ def getProcessList():
 
             # pid
             # ->key, but also but save oid into dictionary too
-            processInfo["pid"] = int(components[0])
+            process_info["pid"] = int(components[0])
 
             # ppid
-            processInfo["ppid"] = int(components[1])
+            process_info["ppid"] = int(components[1])
 
             # uid
-            processInfo["uid"] = int(components[2])
+            process_info["uid"] = int(components[2])
 
             # etime
             # ->convert to abs time
-            processInfo["etime"] = convertElapsedToAbs(components[3])
+            process_info["etime"] = convert_elapsed_to_abs(components[3])
 
-            # path
-            # note: this will contains args, but these are removed below
-            processInfo["path"] = " ".join(components[4:])
+            # command path without args
+            process_info["path"] = components[4]
 
             # add to list
-            processesInfo[processInfo["pid"]] = processInfo
+            processes_info[process_info["pid"]] = process_info
 
-        # ignore exceptions
-        except:
-
+        except Exception:  # pylint: disable=broad-except
+            LOGGER.exception("get_process_list exception happens")
             # skip
             continue
 
-    # invoke ps again to get process list
-    # ->this time just with process pid and name (helps with parsing off args)
-    psOutput = subprocess.check_output(
-        ["ps", "-ax", "-o", "pid,command", "-c"], encoding="utf-8"
-    )
-
-    # parse/split output
-    # ->note: first line is skipped as its the column headers
-    for line in psOutput.split("\n")[1:]:
-
-        # print '2 LINE: %s' % line
-
-        # split
-        components = line.split()
-
-        # sanity check
-        if len(components) < 2:
-
-            # skip
-            continue
-
-        # pid
-        pid = int(components[0])
-
-        # process name
-        # ->rest of line
-        name = " ".join(components[1:])
-
-        # make sure pid exists
-        if pid not in processesInfo:
-
-            # print 'skipping since no proc!'
-
-            # skip
-            continue
-
-        # process's full path + args
-        fullPath = processesInfo[pid]["path"]
-
-        # wrap
-        try:
-
-            # ok, find the process name + ' '
-            # ->we'll assume that this is the real end of the full path (e.g. before any args)
-            processesInfo[pid]["path"] = fullPath[
-                : fullPath.index(name + " ") + len(name)
-            ]
-
-            # print 'updated: %s' % processesInfo[pid]['path']
-
-        # ignore ignore exceptions
-        except:
-
-            # skip
-            continue
-
-    return processesInfo
+    return processes_info
 
 
-# iterates over list of processes
-# ->finds each parent's top parent (if its not launchd)
-def setFirstParent(processes):
+def set_first_parent(processes):
+    """Find each parent's top parent (if its not launchd)."""
 
     # iterate over all processes
     for pid in processes:
@@ -745,7 +570,7 @@ def setFirstParent(processes):
         process["gpid"] = -1
 
         # skip if ppid is 0x0 or 0x1 (launchd)
-        if 0x0 == process["ppid"] or 0x1 == process["ppid"]:
+        if process["ppid"] == 0x0 or process["ppid"] == 0x1:
 
             # set to self parent
             process["gpid"] = process["ppid"]
@@ -760,39 +585,39 @@ def setFirstParent(processes):
             continue
 
         # get next parent
-        parentProcess = processes[process["ppid"]]
+        parent_process = processes[process["ppid"]]
 
         # search for parent right below launchd (pid 0x1)
         while True:
 
             # found it?
-            if 0x1 == parentProcess["ppid"]:
+            if 0x1 == parent_process["ppid"]:
 
                 # save this as the gpid
-                process["gpid"] = parentProcess["pid"]
+                process["gpid"] = parent_process["pid"]
 
                 # bail
                 break
 
             # sanity check
-            if parentProcess["ppid"] not in processes:
+            if parent_process["ppid"] not in processes:
 
                 # couldn't find parent's pid
                 # ->just save current parent's pid as gpid
-                process["gpid"] = parentProcess["pid"]
+                process["gpid"] = parent_process["pid"]
 
                 # bail
                 break
 
             # try next
-            parentProcess = processes[parentProcess["ppid"]]
-
-    return
+            parent_process = processes[parent_process["ppid"]]
 
 
-# classify each process on whether it has a dock icon or not
-# ->sets process 'type' key
-def setProcessType(processes):
+def set_process_type(processes):
+    """Classify each process on whether it has a dock icon or not.
+
+    ->sets process 'type' key
+    """
 
     # iterate over all processes
     for pid in processes:
@@ -801,10 +626,10 @@ def setProcessType(processes):
         process = processes[pid]
 
         # get processes .app/ (bundle) directory
-        appDirectory = findAppDirectory(process["path"])
+        app_directory = find_app_directory(process["path"])
 
         # non-apps can't have a dock icon
-        if not appDirectory:
+        if not app_directory:
 
             # set as non-dock
             process["type"] = PROCESS_TYPE_BG
@@ -816,10 +641,10 @@ def setProcessType(processes):
         try:
 
             # load Info.plist
-            infoPlist = loadInfoPlist(appDirectory)
+            info_plist = load_info_plist(app_directory)
 
             # couldn't load plist
-            if not infoPlist:
+            if not info_plist:
 
                 # set as non-dock
                 process["type"] = PROCESS_TYPE_BG
@@ -829,7 +654,7 @@ def setProcessType(processes):
 
             # plist that have a LSUIElement and its set to 0x1
             # ->background app
-            if "LSUIElement" in infoPlist and 0x1 == infoPlist["LSUIElement"]:
+            if "LSUIElement" in info_plist and 0x1 == info_plist["LSUIElement"]:
 
                 # set as non-dock
                 process["type"] = PROCESS_TYPE_BG
@@ -842,23 +667,20 @@ def setProcessType(processes):
             process["type"] = PROCESS_TYPE_DOCK
 
         # ignore exceptions
-        except:
-
+        except Exception:  # pylint: disable=broad-except
+            LOGGER.exception(f"set_process_type exception caught; {process=}")
             # ignore
             continue
 
-    return
 
-
-# given a binary, find its .app directory
-def findAppDirectory(binary):
-
+def find_app_directory(binary):
+    """Find binary's .app directory."""
     # app dir
-    appDirectory = None
+    app_directory = None
 
     # split path
     # ->init w/ binary
-    splitPath = binary
+    split_path = binary
 
     # bail if path doesn't contain '.app'
     if ".app" not in binary:
@@ -867,67 +689,69 @@ def findAppDirectory(binary):
         return None
 
     # scan back up to .app/
-    while "/" != splitPath and not splitPath.endswith(".app"):
+    while "/" != split_path and not split_path.endswith(".app"):
 
         # split and grab directory component
         # ->this will be one directory
-        splitPath = os.path.split(splitPath)[0]
+        split_path = os.path.split(split_path)[0]
 
     # bail if not found
-    if not splitPath.endswith(".app"):
+    if not split_path.endswith(".app"):
 
         # bail
         return None
 
     # open /Contents/Info.plist
-    mainBundle = Foundation.NSBundle.bundleWithPath_(splitPath)
+    main_bundle = NSBundle.bundleWithPath_(split_path)
 
     # bail if app's executable matches what was passed in
-    if mainBundle is None or mainBundle.executablePath != binary:
+    if main_bundle is None or main_bundle.executablePath != binary:
 
         # match, so save .app/ dir
-        appDirectory = splitPath
+        app_directory = split_path
 
-    return appDirectory
+    return app_directory
 
 
-# convert elapsed time (from ps -o etime) to absolute time in seceond
-# elapsed time format: [[dd-]hh:]mm:ss
-def convertElapsedToAbs(elapsedTime):
+def convert_elapsed_to_abs(elapsed_time):
+    """Convert elapsed time (from ps -o etime) to absolute time in seceond.
 
+    elapsed time format: [[dd-]hh:]mm:ss
+    """
     # time in seconds
-    absoluteTime = 0
+    absolute_time = 0
 
     # split on ':' and '-'
-    timeComponent = re.split("[: -]", elapsedTime)
+    time_component = re.split("[: -]", elapsed_time)
 
     # print 'TIME: %s / %s' % (elapsedTime, timeComponent)
 
     # seconds always included
-    absoluteTime += int(timeComponent[-1])
+    absolute_time += int(time_component[-1])
 
     # minutes always included
-    absoluteTime += int(timeComponent[-2]) * 60
+    absolute_time += int(time_component[-2]) * 60
 
     # hours are optional
-    if len(timeComponent) >= 3:
+    if len(time_component) >= 3:
 
         # add hours
-        absoluteTime += int(timeComponent[-3]) * 60 * 60
+        absolute_time += int(time_component[-3]) * 60 * 60
 
     # days are optional
-    if len(timeComponent) == 4:
+    if len(time_component) == 4:
 
         # add hours
-        absoluteTime += int(timeComponent[-4]) * 60 * 60 * 24
+        absolute_time += int(time_component[-4]) * 60 * 60 * 24
 
-    return absoluteTime
+    return absolute_time
 
 
-# finds an executable (a la 'which')
-# -> based on: http://nullege.com/codes/search/distutils.spawn.find_executable
 def which(binary):
+    """Find an executable (a la 'which').
 
+    -> based on: http://nullege.com/codes/search/distutils.spawn.find_executable
+    """
     # split paths
     paths = os.environ["PATH"].split(os.pathsep)
 

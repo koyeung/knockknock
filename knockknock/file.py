@@ -27,7 +27,7 @@ class File:
             self.bundle = path
 
             # get path
-            self.path = utils.getBinaryFromBundle(path)
+            self.path = utils.get_binary_from_bundle(path)
 
             # if binary could not be found
             # ->default to 'unknown'
@@ -171,7 +171,7 @@ class File:
 
         # however for kexts, use their bundle
         # ->this avoids issue with where errSecCSInfoPlistFailed is returned when the kext's binary is checked
-        if self.bundle and utils.isKext(self.bundle):
+        if self.bundle and utils.is_kext(self.bundle):
 
             # set path to bundle
             path = self.bundle
@@ -181,7 +181,7 @@ class File:
             LOGGER.warning("path %s not exists", path)
             return
 
-        (status, signingInfo) = utils.checkSignature(path)
+        (status, signingInfo) = utils.check_signature(path)
 
         # on success
         # ->save into class var
