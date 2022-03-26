@@ -1,24 +1,27 @@
 import functools
 import json
 
-# project imports
 from . import utils
 
+_WHITELISTS_DIR = "whitelists"
+
 # whitelisted files
-WHITE_LISTED_FILES = "whitelists/whitelistedFiles.json"
+_WHITE_LISTED_FILES = "whitelistedFiles.json"
 
 # whitelisted commands
-WHITE_LISTED_COMMANDS = "whitelists/whitelistedCommands.json"
+_WHITE_LISTED_COMMANDS = "whitelistedCommands.json"
 
 # whitelisted browser extensions
-WHITE_LISTED_EXTENSIONS = "whitelists/whitelistedExtensions.json"
+_WHITE_LISTED_EXTENSIONS = "whitelistedExtensions.json"
 
 
 @functools.lru_cache
 def get_file_whitelist():
     """Return whitelisted files/"""
     return json.loads(
-        (utils.get_kk_directory() / WHITE_LISTED_FILES).read_text(encoding="utf-8")
+        (utils.get_kk_directory() / _WHITELISTS_DIR / _WHITE_LISTED_FILES).read_text(
+            encoding="utf-8"
+        )
     )
 
 
@@ -26,7 +29,9 @@ def get_file_whitelist():
 def get_command_whitelist():
     """Return whitelisted commands."""
     return json.loads(
-        (utils.get_kk_directory() / WHITE_LISTED_COMMANDS).read_text(encoding="utf-8")
+        (utils.get_kk_directory() / _WHITELISTS_DIR / _WHITE_LISTED_COMMANDS).read_text(
+            encoding="utf-8"
+        )
     )["commands"]
 
 
@@ -34,5 +39,7 @@ def get_command_whitelist():
 def get_extension_whitelist():
     """Return whitelisted extensions."""
     return json.loads(
-        (utils.get_kk_directory() / WHITE_LISTED_EXTENSIONS).read_text(encoding="utf-8")
+        (
+            utils.get_kk_directory() / _WHITELISTS_DIR / _WHITE_LISTED_EXTENSIONS
+        ).read_text(encoding="utf-8")
     )
