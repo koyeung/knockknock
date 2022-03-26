@@ -96,7 +96,7 @@ def knocknock():
 
     # format output
     # ->normal output or JSON
-    formatted_results = output.formatResults(results, args.json)
+    formatted_results = output.format_results(results, args.json)
 
     # show em
     print(formatted_results.encode("utf-8", "xmlcharrefreplace").decode())
