@@ -50,7 +50,7 @@ class Extension:
 
         # init whitelist flag
         whitelistedSearch = self.extensionID if self.extensionID != None else self.path
-        self.isWhitelisted = whitelistedSearch in whitelist.get_extension_whitelist()
+        self.is_whitelisted = whitelistedSearch in whitelist.get_extension_whitelist()
 
         return
 
@@ -74,7 +74,7 @@ class Extension:
         return self.path
 
     # for normal output
-    def prettyPrint(self):
+    def pretty_print(self):
 
         # pretty
         return "\n%s \n description: %s\n id: %s\n path: %s\n" % (

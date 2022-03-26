@@ -69,8 +69,8 @@ def formatResults(results, asJSON) -> str:
                 startupObjCount += 1
 
                 # format object
-                # ->files and commands both implement prettyPrint()
-                formattedResults += startupObj.prettyPrint()
+                # ->files and commands both implement pretty_print()
+                formattedResults += startupObj.pretty_print()
 
         # none found?
         if not startupObjCount:

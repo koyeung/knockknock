@@ -11,11 +11,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 class File:
+    """File."""
 
-    # init method
-    # ->init instance variables, hash file, etc
-    def __init__(self, path: str, plist=None, parent=None):
+    # pylint: disable=too-many-instance-attributes
 
+    def __init__(self, path: str, plist=None):
+        """init.
+
+        ->init instance variables, hash file, etc
+        """
         # init path for bundle
         self.bundle = None
 
@@ -54,7 +58,7 @@ class File:
         self.hash = utils.md5sum(self.path)
 
         # init whitelist flag
-        self.isWhitelisted = False
+        self.is_whitelisted = False
 
         # check if its whitelisted
         # ->path is key
@@ -62,53 +66,26 @@ class File:
         if self.path in whitelisted_files:
 
             # check if hash is in white list
-            self.isWhitelisted = self.hash in whitelisted_files[self.path]
+            self.is_whitelisted = self.hash in whitelisted_files[self.path]
 
         # init
-        self.signatureStatus = None
+        self.signature_status = None
 
         # init signing authorities
-        self.signingAuthorities = None
+        self.signing_authorities = None
 
         # init apple flag
-        self.signedByApple = False
+        self.signed_by_apple = False
 
         # check file is signed and if so, by apple
         # note: sets class's signatureStatus/signingAuthorities & signedByApple class vars
-        self.initSigningStatus()
+        self.init_signing_status()
 
         # init VT ratio
-        self.vtRatio = None
+        self.vt_ratio = None
 
-        return
-
-    # return file's path
-    def path(self):
-
-        # path
-        return self.path
-
-    # return file's name
-    def name(self):
-
-        # name
-        return self.name
-
-    # return hash
-    def hash(self):
-
-        # hash
-        return self.hash
-
-    # for normal output
-    def prettyPrint(self):
-
-        # certificate info
-        signedMsg = ""
-
-        # VT ratio
-        vtRatio = ""
-
+    def pretty_print(self):
+        """For normal output."""
         # handle case where hash was unable to be generated
         # ->file wasn't found/couldn't be accessed
         if not self.hash:
@@ -117,60 +94,61 @@ class File:
             self.hash = "unknown"
 
         # handle when file is signed
-        if 0 == self.signatureStatus:
+        if self.signature_status == 0:
 
-            # yup
-            signedMsg = "yes"
+            # certificate info
+            signed_msg = "yes"
 
             # add signing auth's
-            if len(self.signingAuthorities):
+            if len(self.signing_authorities):
 
                 # add
-                signedMsg += " (%s)" % self.signingAuthorities
+                signed_msg += f" ({self.signing_authorities})"
 
         # handle when file is not signed
-        elif self.signatureStatus:
+        elif self.signature_status:
 
             # no
-            signedMsg = "no (%d)" % self.signatureStatus
+            signed_msg = f"no ({self.signature_status})"
 
         # error case
         # ->couldn't check signature
         else:
 
             # unknown
-            signedMsg = "unknown"
+            signed_msg = "unknown"
 
         # non-plisted files
         if not self.plist:
-
-            return "\n%s\n path: %s\n hash: %s\n signed? %s\n VT ratio: %s\n" % (
-                self.name,
-                self.path,
-                self.hash,
-                signedMsg,
-                self.vtRatio,
-            )
+            return f"""
+{self.name}
+ path: {self.path}
+ hash: {self.hash}
+ signed? {signed_msg}
+ VT ratio: {self.vt_ratio}
+"""
 
         # plisted files
-        else:
+        return f"""
+{self.name}
+ path: {self.path}
+ plist: {self.plist}
+ hash: {self.hash}
+ signed? {signed_msg}
+ VT ratio: {self.vt_ratio}
+"""
 
-            return (
-                "\n%s\n path: %s\n plist: %s\n hash: %s \n signed? %s\n VT ratio: %s\n"
-                % (self.name, self.path, self.plist, self.hash, signedMsg, self.vtRatio)
-            )
-
-    # determine if a file (or bundle) is signed, and if so, by Apple
-    def initSigningStatus(self):
-
+    def init_signing_status(self):
+        """Determin if a file (or bundle) is signed, and if so, by Apple."""
         # signing info
-        signingInfo = {}
+        signing_info = {}
 
         # default path to check as file's path
         path = self.path
 
         # however for kexts, use their bundle
-        # ->this avoids issue with where errSecCSInfoPlistFailed is returned when the kext's binary is checked
+        # ->this avoids issue with where errSecCSInfoPlistFailed is returned
+        # when the kext's binary is checked
         if self.bundle and utils.is_kext(self.bundle):
 
             # set path to bundle
@@ -181,19 +159,17 @@ class File:
             LOGGER.warning("path %s not exists", path)
             return
 
-        (status, signingInfo) = utils.check_signature(path)
+        (status, signing_info) = utils.check_signature(path)
 
         # on success
         # ->save into class var
         if 0 == status:
 
             # save sig status
-            self.signatureStatus = signingInfo["status"]
+            self.signature_status = signing_info["status"]
 
             # save apple flag
-            self.signedByApple = signingInfo["isApple"]
+            self.signed_by_apple = signing_info["isApple"]
 
             # save authorities
-            self.signingAuthorities = signingInfo["authorities"]
-
-        return
+            self.signing_authorities = signing_info["authorities"]

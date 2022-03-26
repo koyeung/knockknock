@@ -66,13 +66,13 @@ def knocknock():
                 if isinstance(startup_obj, file.File):
 
                     # by default, ignore signed by Apple
-                    if not args.apple and startup_obj.signedByApple:
+                    if not args.apple and startup_obj.signed_by_apple:
 
                         # add to list
                         ignored_items.append(startup_obj)
 
                 # ignore white listed items
-                if not args.whitelist and startup_obj.isWhitelisted:
+                if not args.whitelist and startup_obj.is_whitelisted:
 
                     # add to list
                     ignored_items.append(startup_obj)

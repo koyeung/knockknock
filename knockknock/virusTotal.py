@@ -121,7 +121,7 @@ def processResults(results):
                 continue
 
             # add VT results to item
-            startupObj.vtRatio = vt_results[startupObj.hash]
+            startupObj.vt_ratio = vt_results[startupObj.hash]
 
     return vt_results
 

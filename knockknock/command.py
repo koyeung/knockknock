@@ -20,7 +20,7 @@ class Command:
 
         # init whitelist flag
         # ->simply set to True if command is list of whitelisted commands
-        self.isWhitelisted = self.command in whitelist.get_command_whitelist()
+        self.is_whitelisted = self.command in whitelist.get_command_whitelist()
 
         return
 
@@ -31,7 +31,7 @@ class Command:
         return json.dumps(self.__dict__, indent=4)
 
     # for normal output
-    def prettyPrint(self):
+    def pretty_print(self):
 
         # pretty-printed string
         string = ""
