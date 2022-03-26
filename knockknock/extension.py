@@ -2,16 +2,17 @@ __author__ = "patrick"
 
 import json
 
-# project imports
 from . import whitelist
 
 
 class Extension:
+    """Extension."""
 
-    # init method
-    # ->init instance variables, hash file, etc
-    def __init__(self, extensionInfo):
+    def __init__(self, extension_info):
+        """Init method.
 
+        ->init instance variables, hash file, etc
+        """
         # init name w/ None
         self.name = None
 
@@ -22,70 +23,54 @@ class Extension:
         self.description = None
 
         # init id w/ None
-        self.extensionID = None
+        self.extension_id = None
 
-        # extact/save id
-        if "id" in extensionInfo:
-
-            # save
-            self.extensionID = extensionInfo["id"]
-
-        # extact/save name
-        if "name" in extensionInfo:
+        # extract/save id
+        if "id" in extension_info:
 
             # save
-            self.name = extensionInfo["name"]
+            self.extension_id = extension_info["id"]
 
-        # extact/save path
-        if "path" in extensionInfo:
-
-            # save
-            self.path = extensionInfo["path"]
-
-        # extact/save description
-        if "description" in extensionInfo:
+        # extract/save name
+        if "name" in extension_info:
 
             # save
-            self.description = extensionInfo["description"]
+            self.name = extension_info["name"]
+
+        # extract/save path
+        if "path" in extension_info:
+
+            # save
+            self.path = extension_info["path"]
+
+        # extract/save description
+        if "description" in extension_info:
+
+            # save
+            self.description = extension_info["description"]
 
         # init whitelist flag
-        whitelistedSearch = self.extensionID if self.extensionID != None else self.path
-        self.is_whitelisted = whitelistedSearch in whitelist.get_extension_whitelist()
+        whitelisted_search = (
+            self.extension_id if self.extension_id is not None else self.path
+        )
+        self.is_whitelisted = whitelisted_search in whitelist.get_extension_whitelist()
 
-        return
-
-    # return extension id
     def hash(self):
-
+        """Return hash."""
         # hash
-        return self.extensionID
-
-    # return extension's name
-    def name(self):
-
-        # name
-        return self.name
-
-    # return extension's path
-    # ->will be a directory
-    def path(self):
-
-        # path
-        return self.path
+        return self.extension_id
 
     # for normal output
     def pretty_print(self):
+        """Normal output."""
+        return f"""
+{self.name}
+ description: {self.description}
+ id: {self.extension_id}
+ path: {self.path}
+"""
 
-        # pretty
-        return "\n%s \n description: %s\n id: %s\n path: %s\n" % (
-            self.name,
-            self.description,
-            self.extensionID,
-            self.path,
-        )
-
-    # for json output
     def __repr__(self):
-
+        """JSON output."""
         # return obj as JSON string
         return json.dumps(self.__dict__, indent=4)
