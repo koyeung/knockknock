@@ -1,6 +1,6 @@
 [Core]
 Name = Login/Logout Hook Scanner
-Module = logHook
+Module = log_hook
 
 [Documentation]
 Author = Patrick W

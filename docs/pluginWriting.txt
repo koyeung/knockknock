@@ -19,7 +19,7 @@ Author = <name of the author>
 Version = <version of the plugin>
 Description = <description of what the plugin does>
 
-Everything in this file is fairly self-explanatory. However it is worth reiterating that the value of ‘Module’ field must match the name of the plugin’s python file (minus the .py file extension). For example, if a plugin is implemented within somePlugin.py, the ‘Module’ field would contain ‘somePlugin’ as its value. 
+Everything in this file is fairly self-explanatory. However it is worth reiterating that the value of ‘Module’ field must match the name of the plugin’s python file (minus the .py file extension). For example, if a plugin is implemented within some_plugin.py, the ‘Module’ field would contain ‘some_plugin’ as its value.
 
 The actual code for the plugin must perform several actions in order to conform as an invokable plugin. However, these are fairly straightforward, and can be easily templatized. First the plugin should import the plugin interface definition via:
 
@@ -28,7 +28,7 @@ from yapsy.IPlugin import IPlugin
 
 Following this, the plugin should create a scan class, and implement a scan() method:
 
-class scan(IPlugin):
+class Scan(IPlugin):
 
      def scan(self):
 
@@ -86,12 +86,12 @@ from yapsy.IPlugin import IPlugin
 #directories where kexts live
 KEXT_DIRECTORIES = ['/System/Library/Extensions/', '/Library/Extensions/']
 
-#plugin class
-class scan(IPlugin):
 
- #automatically invoked by core
+class Scan(IPlugin):
+ """Plugin Class."""
+
  def scan(self):
-	
+	"""Scan action."""
 	#kexts
 	kexts = []
 	

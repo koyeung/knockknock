@@ -2,16 +2,17 @@ __author__ = "patrick"
 
 import json
 
-# project imports
 from . import whitelist
 
 
 class Command:
+    """Command."""
 
-    # init method
-    # ->save command and set white list flag
     def __init__(self, command, file=None):
+        """Init method.
 
+        ->save command and set white list flag
+        """
         # save command
         self.command = command
 
@@ -20,9 +21,7 @@ class Command:
 
         # init whitelist flag
         # ->simply set to True if command is list of whitelisted commands
-        self.isWhitelisted = self.command in whitelist.get_command_whitelist()
-
-        return
+        self.is_whitelisted = self.command in whitelist.get_command_whitelist()
 
     # for json output
     def __repr__(self):
@@ -30,22 +29,19 @@ class Command:
         # return obj as JSON string
         return json.dumps(self.__dict__, indent=4)
 
-    # for normal output
-    def prettyPrint(self):
-
-        # pretty-printed string
-        string = ""
-
+    def pretty_print(self) -> str:
+        """Normal output."""
         # when cmd has file
         if self.file:
 
             # init
-            string = "\n%s\n file: %s\n" % (self.command, self.file)
+            return f"""
+{self.command}
+ file: {self.file}
+"""
 
         # no file
-        else:
 
-            # init
-            string = "\n%s\n" % (self.command)
-
-        return string
+        return f"""
+{self.command}
+"""

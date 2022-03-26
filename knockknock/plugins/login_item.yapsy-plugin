@@ -1,6 +1,6 @@
 [Core]
 Name = Login Item Scanner
-Module = loginItem
+Module = login_item
 
 [Documentation]
 Author = Patrick W

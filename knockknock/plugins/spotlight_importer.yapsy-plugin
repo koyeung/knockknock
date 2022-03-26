@@ -1,6 +1,6 @@
 [Core]
 Name = Spotlight Importer Scanner
-Module = spotlightImporter
+Module = spotlight_importer
 
 [Documentation]
 Author = Patrick W

@@ -1,18 +1,17 @@
 #!/usr/bin/python
 #
-# KnockKnock by Patrick Wardle is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
+# KnockKnock by Patrick Wardle is licensed under
+# a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
 import argparse
 import logging
 import os
 import sys
-from pathlib import Path
 
 from yapsy.PluginManager import PluginManager
 
-# project imports
-from . import file, output, utils, virusTotal, whitelist
+from . import file, output, utils, virustotal
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,153 +19,134 @@ LOGGER = logging.getLogger(__name__)
 _MIN_OS_VERSION = (12, 0)
 
 
-# main interface
 def knocknock():
+    """Entry point."""
 
     logging.basicConfig(level=logging.WARNING)
 
-    # results
-    results = []
+    # parse options/args
+    # ->will bail (with msg) if usage is incorrect
+    args = _parse_args()
 
-    try:
+    _init_knockknock(args)
 
-        # parse options/args
-        # ->will bail (with msg) if usage is incorrect
-        args = _parse_args()
+    plugin_manager = _get_plugin_manager()
+    LOGGER.info("initialized plugin manager")
 
-        _init_knockknock(args)
+    LOGGER.info("initialization complete")
 
-        plugin_manager = _get_plugin_manager()
-        LOGGER.info("initialized plugin manager")
+    # list plugins and bail
+    if args.list:
+        _list_plugins(plugin_manager)
+        return
 
-        LOGGER.info("initialization complete")
+    # scan for thingz
+    results = _scan(plugin_name=args.plugin, plugin_manager=plugin_manager)
 
-        # list plugins and bail
-        if args.list:
+    # make sure scan succeeded
+    assert results, "scan failed"
 
-            # display plugins
-            _list_plugins(plugin_manager)
+    # depending on args
+    # filter out apple signed binaries, or whitelisted binaries, etc
+    if not args.apple or not args.whitelist:  # or args.signed:
 
-            # bail
-            return True
+        # iterate over all results
+        # ->one for each startup item type
+        for result in results:
 
-        # scan for thingz
-        results = _scan(plugin_name=args.plugin, plugin_manager=plugin_manager)
+            # ignored/whitelisted items
+            ignored_items = []
 
-        # make sure scan succeeded
-        if None == results:
+            # scan each startup object
+            # ->if it should be ingored, add to ignore list
+            for startup_obj in result["items"]:
 
-            LOGGER.error("scan failed")
-            return False
+                # filter out files
+                # ->depending on args, singed by apple, whitelisted, etc
+                if isinstance(startup_obj, file.File):
 
-        # depending on args
-        # filter out apple signed binaries, or whitelisted binaries, etc
-        if not args.apple or not args.whitelist:  # or args.signed:
-
-            # iterate over all results
-            # ->one for each startup item type
-            for result in results:
-
-                # ignored/whitelisted items
-                ignoredItems = []
-
-                # scan each startup object
-                # ->if it should be ingored, add to ignore list
-                for startupObj in result["items"]:
-
-                    # filter out files
-                    # ->depending on args, singed by apple, whitelisted, etc
-                    if isinstance(startupObj, file.File):
-
-                        # by default, ignore signed by Apple
-                        if not args.apple and startupObj.signedByApple:
-
-                            # add to list
-                            ignoredItems.append(startupObj)
-
-                    # ignore white listed items
-                    if not args.whitelist and startupObj.isWhitelisted:
+                    # by default, ignore signed by Apple
+                    if not args.apple and startup_obj.signed_by_apple:
 
                         # add to list
-                        ignoredItems.append(startupObj)
+                        ignored_items.append(startup_obj)
 
-                    # now that we are done iterating
-                    # ->subtract out all ignored/whitelisted items
-                    result["items"] = list(set(result["items"]) - set(ignoredItems))
+                # ignore white listed items
+                if not args.whitelist and startup_obj.is_whitelisted:
 
-        # filter out dups in unclassified plugin
-        # ->needed since it just looks at the proc list
-        removeUnclassDups(results)
+                    # add to list
+                    ignored_items.append(startup_obj)
 
-        # get vt results
-        if not args.disableVT:
+                # now that we are done iterating
+                # ->subtract out all ignored/whitelisted items
+                result["items"] = list(set(result["items"]) - set(ignored_items))
 
-            LOGGER.info("querying VirusTotal - sit tight!")
+    # filter out dups in unclassified plugin
+    # ->needed since it just looks at the proc list
+    remove_dups_from_unclassified(results)
 
-            # process
-            # ->will query VT and add VT info to all files
-            virusTotal.processResults(results)
+    # get vt results
+    if not args.disableVT:
 
-        # format output
-        # ->normal output or JSON
-        formattedResults = output.formatResults(results, args.json)
+        LOGGER.info("querying VirusTotal - sit tight!")
 
-        # show em
-        print(formattedResults.encode("utf-8", "xmlcharrefreplace").decode())
+        # process
+        # ->will query VT and add VT info to all files
+        virustotal.process_results(results)
 
-    # top level exception handler
-    except Exception as e:
+    # format output
+    # ->normal output or JSON
+    formatted_results = output.format_results(results, args.json)
 
-        LOGGER.exception("failed")
-        return False
-
-    return True
+    # show em
+    print(formatted_results.encode("utf-8", "xmlcharrefreplace").decode())
 
 
-# filter out dups in unclassified plugin
-# ->needed, since it just looks at the proc list so grabs items that are likely detected/classified elsewhere
-def removeUnclassDups(results):
+def remove_dups_from_unclassified(results):
+    """Filter out dups in unclassified plugin.
 
+    ->needed, since it just looks at the proc list so grabs items that are likely
+    detected/classified elsewhere
+    """
     # unique unclass'd items
-    uniqueItems = []
+    unique_items = []
 
     # get unclassifed results
-    unclassItems = [
+    unclassified_items = [
         result for result in results if result["name"] == "Unclassified Items"
     ]
 
     # bail if there aren't any
-    if not unclassItems:
+    if not unclassified_items:
 
         # none
         return
 
     # just want the dictionary
     # ->first item
-    unclassItems = unclassItems[0]
+    unclassified_items = unclassified_items[0]
 
     # get all hashes
-    hashes = allHashes(results)
+    hashes = all_hashes(results)
 
     # look at each unclass item
     # ->remove it if its reported elsewhere
-    for unclassItem in unclassItems["items"]:
+    for unclassified_item in unclassified_items["items"]:
 
         # only keep otherwise unknown items
-        if 0x1 == hashes.count(unclassItem.hash):
+        if 0x1 == hashes.count(unclassified_item.hash):
 
             # save
-            uniqueItems.append(unclassItem)
+            unique_items.append(unclassified_item)
 
     # update
-    unclassItems["items"] = uniqueItems
+    unclassified_items["items"] = unique_items
 
     return
 
 
-# return a list of hashes of all startup items (files)
-def allHashes(results):
-
+def all_hashes(results):
+    """Return a list of hashes of all startup items (files)."""
     # list of hashes
     hashes = []
 
@@ -175,13 +155,13 @@ def allHashes(results):
     for result in results:
 
         # hash all files
-        for startupObj in result["items"]:
+        for startup_obj in result["items"]:
 
             # check for file
-            if isinstance(startupObj, file.File):
+            if isinstance(startup_obj, file.File):
 
                 # save hash
-                hashes.append(startupObj.hash)
+                hashes.append(startup_obj.hash)
 
     return hashes
 
@@ -198,8 +178,7 @@ def _init_knockknock(args) -> None:
     python_version = sys.version_info
 
     if (python_version.major, python_version.minor) < (3, 8):
-        LOGGER.error("KnockKnock requires python 3.8+ (found: %s)", python_version)
-        return False
+        raise RuntimeError(f"KnockKnock requires python 3.8+ (found: {python_version})")
 
     # check macOS version
     if (os_version := utils.get_os_version()) >= _MIN_OS_VERSION:
@@ -208,14 +187,13 @@ def _init_knockknock(args) -> None:
         )
     else:
         LOGGER.warning(
-            f"{os_version.major}.{os_version.minor} is not an officially supported macOS version (your mileage may vary)",
+            f"{os_version.major}.{os_version.minor} is not an officially supported macOS version "
+            f"(your mileage may vary)"
         )
 
     # giving warning about r00t
     if 0 != os.geteuid():
         LOGGER.info("not running as r00t...some results may be missed (e.g. CronJobs)")
-
-    return
 
 
 # parse args
@@ -287,20 +265,18 @@ def _get_plugin_manager() -> PluginManager:
     return plugin_manager
 
 
-# list plugins
 def _list_plugins(plugin_manager) -> None:
 
     LOGGER.info("listing plugins")
 
-    # interate over all plugins
+    # iterate over all plugins
     for plugin in sorted(plugin_manager.getAllPlugins(), key=lambda x: x.name):
 
         # dbg msg
         # ->always use print, since -v might not have been used
-        print("%s -> %s" % (os.path.split(plugin.path)[1], plugin.name))
+        print(f"{os.path.split(plugin.path)[1]} -> {plugin.name}")
 
 
-# scanz!
 def _scan(*, plugin_name, plugin_manager):
 
     # results
@@ -308,7 +284,7 @@ def _scan(*, plugin_name, plugin_manager):
 
     # flag indicating plugin was found
     # ->only relevant when a plugin name is specified
-    foundPlugin = False
+    found_plugin = False
 
     # full scan?
     if not plugin_name:
@@ -318,63 +294,63 @@ def _scan(*, plugin_name, plugin_manager):
     else:
         LOGGER.info("beginning scan using %s plugin", plugin_name)
 
-    # interate over all plugins
+    # iterate over all plugins
     for plugin in plugin_manager.getAllPlugins():
 
         # results from plugin
-        pluginResults = None
+        plugin_results = None
 
         # no plugin names means run 'em all
         if not plugin_name:
             LOGGER.info("executing plugin: %s", plugin.name)
 
             # execute current plugin
-            pluginResults = plugin.plugin_object.scan()
+            plugin_results = plugin.plugin_object.scan()
 
         # try to find match
         else:
 
             # get name of plugin file as name
             # ->e.g. /plugins/somePlugin.py -> 'somePlugin'
-            currentPlugin = os.path.split(plugin.path)[1]
+            current_plugin = os.path.split(plugin.path)[1]
 
             # check for match
-            if plugin_name.lower() == currentPlugin.lower():
+            if plugin_name.lower() == current_plugin.lower():
 
                 # found it
-                foundPlugin = True
+                found_plugin = True
 
                 LOGGER.info("executing requested plugin: %s", plugin_name)
 
                 # execute plugin
-                pluginResults = plugin.plugin_object.scan()
+                plugin_results = plugin.plugin_object.Scan()
 
         # save plugin output
-        if pluginResults:
+        if plugin_results:
 
             # plugins normally return a single dictionary of results
-            if isinstance(pluginResults, dict):
+            if isinstance(plugin_results, dict):
 
                 # save results
-                results.append(pluginResults)
+                results.append(plugin_results)
 
             # some plugins though can return a list of dictionaries
             # ->e.g. the launch daemon/agent plugin (one dictionary for each type)
-            elif isinstance(pluginResults, list):
+            elif isinstance(plugin_results, list):
 
                 # save results
-                results.extend(pluginResults)
+                results.extend(plugin_results)
 
         # check if specific plugin was specified and found
         # ->if so, can bail
-        if plugin_name and foundPlugin:
+        if plugin_name and found_plugin:
 
             # bail
             break
 
     # sanity check
     # -> make sure if a specific plugin was specified, it was found/exec'd
-    if plugin_name and not foundPlugin:
+    if plugin_name and not found_plugin:
 
         LOGGER.error("did not find requested plugin")
 

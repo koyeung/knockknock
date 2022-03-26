@@ -1,6 +1,6 @@
 [Core]
 Name = LaunchD Conf Scanner
-Module = launchdConf
+Module = launchd_conf
 
 [Documentation]
 Author = Patrick W
