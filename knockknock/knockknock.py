@@ -294,7 +294,7 @@ def _scan(*, plugin_name, plugin_manager):
     else:
         LOGGER.info("beginning scan using %s plugin", plugin_name)
 
-    # interate over all plugins
+    # iterate over all plugins
     for plugin in plugin_manager.getAllPlugins():
 
         # results from plugin
@@ -323,7 +323,7 @@ def _scan(*, plugin_name, plugin_manager):
                 LOGGER.info("executing requested plugin: %s", plugin_name)
 
                 # execute plugin
-                plugin_results = plugin.plugin_object.scan()
+                plugin_results = plugin.plugin_object.Scan()
 
         # save plugin output
         if plugin_results:

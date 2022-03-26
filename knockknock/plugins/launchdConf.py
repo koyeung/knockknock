@@ -1,25 +1,21 @@
+"""launchd.conf.
+
+the /etc/launchd.conf file contains commands that are that are executed at boot by launchctl
+
+this plugin (very basically) parses this file, extacting all such commands
+And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
+"""
 __author__ = "patrick w"
 
-"""
-launchd.conf
-
-    the /etc/launchd.conf file contains commands that are that are executed at boot by launchctl
-
-    this plugin (very basically) parses this file, extacting all such commands
-
-    And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
-"""
-
 import logging
-import os
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
 
-LOGGER = logging.getLogger(__name__)
-
 # project imports
 from knockknock import command, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # path to launchd.conf
 LAUNCHD_CONF_FILE = "/etc/launchd.conf"
@@ -30,26 +26,28 @@ LAUNCHD_CONF_NAME = "Launchd Configuration File"
 # for output, description of items
 LAUNCHD_CONF_DESCRIPTION = "Commands that are executed by LaunchCtl"
 
-# plugin class
-class scan(IPlugin):
 
-    # init results dictionary
-    # ->item name, description, and items list
-    def initResults(self, name, description):
+class Scan(IPlugin):
+    """Plugin class."""
 
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
+
+        ->item name, description, and list
+        """
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
-    # invoked by core
     def scan(self):
-
+        """Scan action."""
         # commands
         commands = []
 
         LOGGER.info("running scan")
 
         # init results dictionary
-        results = self.initResults(LAUNCHD_CONF_NAME, LAUNCHD_CONF_DESCRIPTION)
+        results = self.init_results(LAUNCHD_CONF_NAME, LAUNCHD_CONF_DESCRIPTION)
 
         # get all commands in launchd.conf
         # ->note, commands in functions will be ignored...
@@ -57,11 +55,11 @@ class scan(IPlugin):
 
         # iterate over all commands
         # ->instantiate command obj and save into results
-        for extractedCommand in commands:
+        for extracted_command in commands:
 
             # TODO: could prolly do some more advanced processing (e.g. look for bsexec, etc)
 
             # instantiate and save
-            results["items"].append(command.Command(extractedCommand))
+            results["items"].append(command.Command(extracted_command))
 
         return results

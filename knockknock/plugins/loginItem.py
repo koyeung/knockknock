@@ -1,10 +1,10 @@
+"""login items are the legit way to register applications for auto execution when a user logs in
+
+this plugin parses the undocumented contents of all users' com.apple.loginitems.plist to find
+login items
+"""
 __author__ = "patrick w"
 
-"""
-	login items are the legit way to register applications for auto execution when a user logs in
-
-	this plugin parses the undocumented contents of all users' com.apple.loginitems.plist to find login items
-"""
 
 import logging
 import os
@@ -30,120 +30,118 @@ LOGIN_ITEM_NAME = "Login Items"
 # for output, description of items
 LOGIN_ITEM_DESCRIPTION = "Binaries that are executed at login"
 
-# plugin class
-class scan(IPlugin):
 
-    # init results dictionary
-    # ->plugin name, description, and list
-    def initResults(self, name, description):
+class Scan(IPlugin):
+    """Plugin class."""
 
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
+
+        ->item name, description, and list
+        """
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
-    # invoked by core
     def scan(self):
-
-        # login items files
-        loginItems = []
-
+        """Scan action."""
         LOGGER.info("running scan")
 
         # init results dictionary
-        results = self.initResults(LOGIN_ITEM_NAME, LOGIN_ITEM_DESCRIPTION)
+        results = self.init_results(LOGIN_ITEM_NAME, LOGIN_ITEM_DESCRIPTION)
 
         # process
         # ->open file and read each line
-        for userLoginItems in utils.expand_path(LOGIN_ITEM_FILE):
+        for user_login_items in utils.expand_path(LOGIN_ITEM_FILE):
 
             # wrap
             try:
 
-                LOGGER.info("scanning %s", userLoginItems)
+                LOGGER.info("scanning %s", user_login_items)
 
                 # load plist and check
-                plistData = utils.load_plist(userLoginItems)
+                plist_data = utils.load_plist(user_login_items)
 
                 # extract sessions items
-                sesssionItems = plistData["SessionItems"]
+                sesssion_items = plist_data["SessionItems"]
 
                 # extract custom list items
-                customListItems = sesssionItems["CustomListItems"]
+                custom_list_items = sesssion_items["CustomListItems"]
 
                 # iterate over all login items
-                for customListItem in customListItems:
+                for custom_list_item in custom_list_items:
 
                     # wrap it
                     try:
 
                         # extact alias data
-                        aliasData = list((customListItem["Alias"]).bytes())
+                        alias_data = list((custom_list_item["Alias"]).bytes())
 
                         # parse alias data
-                        loginItem = self.parseAliasData(aliasData)
+                        login_item = self.parse_alias_data(alias_data)
 
                         # save extracted login item
-                        if loginItem:
+                        if login_item:
 
                             # save
-                            results["items"].append(file.File(loginItem))
+                            results["items"].append(file.File(login_item))
 
                     # ignore exceptions
-                    except Exception as e:
-
-                        # skip
-                        continue
+                    except Exception:  # pylint: disable=broad-except
+                        LOGGER.exception(f"{custom_list_item=}")
 
             # ignore exceptions
-            except:
-
-                # skip
-                continue
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception(f"{user_login_items=}")
 
         return results
 
-    # path to login item is in 'alias' data
-    # ->this is an undocumented blob of data that has the path to the login item somwhere in it
-    #   to find it, code looks for data thats formatted size:str that's a file
-    def parseAliasData(self, aliasData):
+    @staticmethod
+    def parse_alias_data(alias_data):
+        """Parse alias data.
 
+        path to login item is in 'alias' data
+        ->this is an undocumented blob of data that has the path to the login item somwhere in it
+        to find it, code looks for data thats formatted size:str that's a file
+        """
         # extract login item
-        loginItem = None
+        login_item = None
 
         # scan thru binary data
         # look for size:str that's a file
-        for i in range(0, len(aliasData)):
+        for i, data in enumerate(alias_data):
 
             # extract size
-            size = ord(aliasData[i])
+            size = ord(data)
 
             # if what could be a size is reasonable
             # at least 2 (this could be higher) and smaller than rest of the data
-            if size < 2 or size > len(aliasData) - i:
+            if size < 2 or size > len(alias_data) - i:
                 # skip
                 continue
 
             # extract possible file
-            file = "/" + "".join(aliasData[i + 1 : i + 1 + size])
+            file_ = "/" + "".join(alias_data[i + 1 : i + 1 + size])
 
             # wrap
             try:
 
                 # check if it exists
-                if not os.path.exists(file):
+                if not os.path.exists(file_):
 
                     # skip
                     continue
 
             # ignore exceptions
-            except:
-
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception(f"{file_=}")
                 # skip
                 continue
 
             # found file
-            loginItem = file
+            login_item = file_
 
             # bail
             break
 
-        return loginItem
+        return login_item
