@@ -1,29 +1,27 @@
+"""browser extensions.
+
+browser extensions can provide a way for code to be executed whenever the browser is launched
+this plugin parses meta data files/directories of Safari, Chrome,
+and Firefox to find all installed extensions
+"""
 __author__ = "patrick w"
-
-"""
-browser extensions
-
-    browser extensions can provide a way for code to be executed whenever the browser is launched
-
-    this plugin parses meta data files/directories of Safari, Chrome, and Firefox to find all installed extensions
-
-"""
 
 import glob
 import json
 import logging
 import os
-import traceback
 
+# names are lazily loaded in pyobjc modules
+# pylint: disable=no-member
 import CoreServices
-
-LOGGER = logging.getLogger(__name__)
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
 
 # project imports
 from knockknock import extension, utils
+
+LOGGER = logging.getLogger(__name__)
 
 # safari's extensions path
 SAFARI_EXTENSION_DIRECTORY = "~/Library/Safari/Extensions/Extensions.plist"
@@ -55,25 +53,28 @@ FIREFOX_EXTENSIONS_NAME = "Firefox Browser Extensions"
 FIREFOX_EXTENSIONS_DESCRIPTION = "Code that is hosted and executed by Firefox"
 
 
-class scan(IPlugin):
+class Scan(IPlugin):
+    """Plugin class."""
 
-    # init results dictionary
-    # ->item name, description, and list
-    def initResults(self, name, description):
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
+
+        ->item name, description, and list
+        """
 
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
-    # invoked by core
     def scan(self):
-
+        """Scan action."""
         # results
         results = []
 
         LOGGER.info("running scan")
 
         # get list of installed browsers
-        browsers = self.getInstalledBrowsers()
+        browsers = self.get_installed_browsers()
 
         # iterate over all browsers
         # ->scan each
@@ -86,13 +87,13 @@ class scan(IPlugin):
 
                 # init results
                 results.append(
-                    self.initResults(
+                    self.init_results(
                         SAFARI_EXTENSIONS_NAME, SAFARI_EXTENSIONS_DESCRIPTION
                     )
                 )
 
                 # scan
-                results[len(results) - 1]["items"] = self.scanExtensionsSafari()
+                results[len(results) - 1]["items"] = self.scan_extensions_safari()
 
             # scan Chrome extensions
             if "Google Chrome.app" in browser:
@@ -101,13 +102,13 @@ class scan(IPlugin):
 
                 # init results
                 results.append(
-                    self.initResults(
+                    self.init_results(
                         CHROME_EXTENSIONS_NAME, CHROME_EXTENSIONS_DESCRIPTION
                     )
                 )
 
                 # scan
-                results[len(results) - 1]["items"] = self.scanExtensionsChrome()
+                results[len(results) - 1]["items"] = self.scan_extensions_chrome()
 
             # scan Firefox extensions
             if "Firefox.app" in browser:
@@ -116,159 +117,150 @@ class scan(IPlugin):
 
                 # init results
                 results.append(
-                    self.initResults(
+                    self.init_results(
                         FIREFOX_EXTENSIONS_NAME, FIREFOX_EXTENSIONS_DESCRIPTION
                     )
                 )
 
                 # scan
-                results[len(results) - 1]["items"] = self.scanExtensionsFirefox()
+                results[len(results) - 1]["items"] = self.scan_extensions_firefox()
 
         return results
 
-    # get list of installed browsers
-    def getInstalledBrowsers(self):
-
+    @staticmethod
+    def get_installed_browsers():
+        """Get list of installed browsers."""
         # wrap
         try:
 
             # list of installed browsers
-            installedBrowsers = []
+            installed_browsers = []
 
             # get list of app IDs that can handle 'https'
             # ->i.e. browsers
-            browsersIDs = CoreServices.LSCopyAllHandlersForURLScheme("https")
+            browsers_ids = CoreServices.LSCopyAllHandlersForURLScheme("https")
 
             # app IDs to full paths to the apps
-            for browserID in browsersIDs:
+            for browser_id in browsers_ids:
 
                 # wrap
                 try:
 
                     # use LSFindApplicationForInfo to convert ID to app path
                     # returns a list, 3rd item an NSURL to the browser
-                    browserURL = CoreServices.LSFindApplicationForInfo(
-                        CoreServices.kLSUnknownCreator, browserID, None, None, None
+                    browser_url = CoreServices.LSFindApplicationForInfo(
+                        CoreServices.kLSUnknownCreator, browser_id, None, None, None
                     )[2]
 
                     # convert the url to a filepath
-                    installedBrowsers.append(browserURL.path())
+                    installed_browsers.append(browser_url.path())
 
                 # ignore exceptions
                 # ->just want to try next browser
-                except Exception as e:
-
-                    # ignore
-                    pass
+                except Exception:  # pylint: disable=broad-except
+                    LOGGER.exception(f"get_installed_browsers {browser_id=}")
 
         # ignore exceptions
-        except Exception as e:
+        except Exception:  # pylint: disable=broad-except
+            LOGGER.exception("get_installed_browsers")
 
-            print(e)
-            traceback.print_exc()
+        return installed_browsers
 
-            # ignore
-            pass
+    @staticmethod
+    def scan_extensions_safari():
+        """Scan for Safari extension.
 
-        return installedBrowsers
-
-    # scan for Safari extentions
-    # ->load plist file, and parse looking for 'Installed Extensions'
-    def scanExtensionsSafari(self):
-
+        ->load plist file, and parse looking for 'Installed Extensions'
+        """
         # results
         results = []
 
         # get list of all chrome's preferences file
         # ->these contain JSON w/ info about all extensions
-        safariExtensionFiles = utils.expandPath(SAFARI_EXTENSION_DIRECTORY)
+        safari_extension_files = utils.expand_path(SAFARI_EXTENSION_DIRECTORY)
 
         # parse each for extensions
-        for safariExtensionFile in safariExtensionFiles:
+        for safari_extension_file in safari_extension_files:
 
             # wrap
             try:
 
                 # load extension file
-                plistData = utils.loadPlist(safariExtensionFile)
+                plist_data = utils.load_plist(safari_extension_file)
 
                 # ensure data looks ok
-                if not plistData or "Installed Extensions" not in plistData:
+                if not plist_data or "Installed Extensions" not in plist_data:
 
                     # skip/try next
                     continue
 
                 # the list of extensions are stored in the 'settings' key
-                extensions = plistData["Installed Extensions"]
+                extensions = plist_data["Installed Extensions"]
 
                 # scan all extensions
                 # ->skip ones that are disabled, white listed, etc
-                for currentExtension in extensions:
+                for current_extension in extensions:
 
                     # dictionary for extension info
-                    extensionInfo = {}
+                    extension_info = {}
 
                     # skip disabled plugins
                     if (
-                        "Enabled" in currentExtension
-                        and not currentExtension["Enabled"]
+                        "Enabled" in current_extension
+                        and not current_extension["Enabled"]
                     ):
 
                         # skip
                         continue
 
                     # extract path
-                    if "Archive File Name" in currentExtension:
+                    if "Archive File Name" in current_extension:
 
                         # name
-                        extensionInfo["path"] = (
-                            safariExtensionFile
+                        extension_info["path"] = (
+                            safari_extension_file
                             + "/"
-                            + currentExtension["Archive File Name"]
+                            + current_extension["Archive File Name"]
                         )
 
                     # extract name
-                    if "Bundle Directory Name" in currentExtension:
+                    if "Bundle Directory Name" in current_extension:
 
                         # path
-                        extensionInfo["name"] = currentExtension[
+                        extension_info["name"] = current_extension[
                             "Bundle Directory Name"
                         ]
 
                     # create and append
-                    results.append(extension.Extension(extensionInfo))
+                    results.append(extension.Extension(extension_info))
 
             # ignore exceptions
-            except Exception as e:
-
-                # leave in err msg (for now)
-                print(e)
-                traceback.print_exc()
-
-                # skip/try next
-                continue
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception(f"{safari_extension_file=}")
 
         return results
 
-    # scan for Chrome extentions
-    # ->load JSON file, and parse looking for installed/enabled extensions
-    def scanExtensionsChrome(self):
+    @staticmethod
+    def scan_extensions_chrome():
+        """Scan for Chrome extensions.
 
+        ->load JSON file, and parse looking for installed/enabled extensions
+        """
         # results
         results = []
 
         # get list of all chrome's preferences file
         # ->these contain JSON w/ info about all extensions
-        chromePreferences = utils.expandPaths(CHROME_DIRECTORIES)
+        chrome_preferences = utils.expand_paths(CHROME_DIRECTORIES)
 
         # parse each for extensions
-        for chromePreferenceFile in chromePreferences:
+        for chrome_preference_file in chrome_preferences:
 
             # wrap
             try:
 
                 # open preference file and load it
-                with open(chromePreferenceFile, "r") as file:
+                with open(chrome_preference_file, "r", encoding="utf-8") as file:
 
                     # load as JSON
                     preferences = json.loads(file.read())
@@ -279,92 +271,90 @@ class scan(IPlugin):
 
                 # pref file just has the list of ids,
                 # everything else we might want is in
-                # os.path.dirname(chromePreferenceFile) + '/Extensions/' + id + version + manifest.json
+                # os.path.dirname(chromePreferenceFile)
+                # + '/Extensions/' + id + version + manifest.json
                 # manifest has name, description
 
                 extensions = preferences["extensions"]["install_signature"]["ids"]
 
                 # scan all extensions
                 # ->skip ones that are disabled, white listed, etc
-                for extensionKey in extensions:
+                for extension_key in extensions:
 
                     # dictionary for extension info
-                    extensionInfo = {}
+                    extension_info = {}
 
                     # save key
-                    extensionInfo["id"] = extensionKey
-                    extensionPath = (
-                        os.path.dirname(chromePreferenceFile)
+                    extension_info["id"] = extension_key
+                    extension_path = (
+                        os.path.dirname(chrome_preference_file)
                         + "/Extensions/"
-                        + extensionInfo["id"]
+                        + extension_info["id"]
                     )
 
-                    extdir = os.listdir(extensionPath)
+                    extdir = os.listdir(extension_path)
                     for verdir in extdir:
-                        manpath = extensionPath + "/" + verdir + "/manifest.json"
+                        manpath = extension_path + "/" + verdir + "/manifest.json"
 
-                        with open(manpath, "r") as file:
+                        with open(manpath, "r", encoding="utf-8") as file:
                             manifest = json.loads(file.read())
                             if not manifest:
                                 continue
 
-                        extensionInfo["path"] = manpath
-                        extensionInfo["name"] = manifest["name"]
-                        extensionInfo["description"] = manifest["description"]
+                        extension_info["path"] = manpath
+                        extension_info["name"] = manifest["name"]
+                        extension_info["description"] = manifest["description"]
 
                         # create and append
-                        results.append(extension.Extension(extensionInfo))
+                        results.append(extension.Extension(extension_info))
 
             # ignore exceptions
-            except Exception as e:
-
-                # leave in err msg (for now)
-                print(e)
-                traceback.print_exc()
-
-                # skip/try next
-                continue
+            except Exception:  # pylint: disable=broad-except
+                LOGGER.exception(f"{chrome_preference_file=}")
 
         return results
 
-    # scan for firefox extensions
-    # ->open/parse all 'addons.json' and 'extension.json' files
-    def scanExtensionsFirefox(self):
+    @staticmethod
+    def scan_extensions_firefox():
+        """Scan for firefox extensions.
 
+        ->open/parse all 'addons.json' and 'extension.json' files
+        """  # pylint: disable=too-many-branches
         # results
         results = []
 
         # dictionary of extension IDs
         # ->needed since they can show up in both addons.json and extensions.json
-        extensionIDs = []
+        extension_ids = []
 
         # get list of all firefox's profile directories
-        # ->these contain profiles, that in turn, contain a files ('addons.json/extensions.json') about the extensions
-        firefoxProfileDirectories = utils.expandPath(FIREFOX_PROFILE_DIRECTORY)
+        # ->these contain profiles, that in turn, contain a files ('addons.json/extensions.json')
+        # about the extensions
+        firefox_profile_directories = utils.expand_path(FIREFOX_PROFILE_DIRECTORY)
 
         # iterate over all addons and extensions files in profile directories
         # ->extact all addons and extensions
-        for firefoxProfileDirectory in firefoxProfileDirectories:
+        for firefox_profile_directory in firefox_profile_directories:
 
             # get list of all 'addon.json' files
-            firefoxExtensionFiles = glob.glob(
-                firefoxProfileDirectory + "/*.default*/addons.json"
+            firefox_extension_files = glob.glob(
+                firefox_profile_directory + "/*.default*/addons.json"
             )
 
             # and also all 'extensions.json' files
-            firefoxExtensionFiles.extend(
-                glob.glob(firefoxProfileDirectory + "/*.default*/extensions.json")
+            firefox_extension_files.extend(
+                glob.glob(firefox_profile_directory + "/*.default*/extensions.json")
             )
 
             # open/parse each addon file
             # ->contains list of addons (extensions)
-            for firefoxExtensionFile in firefoxExtensionFiles:
+            for firefox_extension_file in firefox_extension_files:
 
                 # wrap
                 try:
 
                     # open extension file and load it
-                    with open(firefoxExtensionFile, "r") as file:
+                    with open(firefox_extension_file, "r", encoding="utf-8") as file:
 
                         # load as JSON
                         addons = json.loads(file.read())["addons"]
@@ -374,7 +364,8 @@ class scan(IPlugin):
                             continue
 
                 # ignore exceptions
-                except:
+                except Exception:  # pylint: disable=broad-except
+                    LOGGER.exception(f"{firefox_extension_file=}")
 
                     # skip/try next
                     continue
@@ -384,7 +375,7 @@ class scan(IPlugin):
                 for addon in addons:
 
                     # dictionary for addon/extension info
-                    extensionInfo = {}
+                    extension_info = {}
 
                     # wrap
                     try:
@@ -393,36 +384,36 @@ class scan(IPlugin):
                         if "id" in addon:
 
                             # save
-                            extensionInfo["id"] = addon["id"]
+                            extension_info["id"] = addon["id"]
 
                         # skip duplicates
                         # ->extensions can show up in addons.json and extensions.json
-                        if addon["id"] in extensionIDs:
+                        if addon["id"] in extension_ids:
 
                             # skip dupe
                             continue
 
                         # json in addons.json file is formatted one way
-                        if "addons.json" == os.path.split(firefoxExtensionFile)[1]:
+                        if "addons.json" == os.path.split(firefox_extension_file)[1]:
 
                             # extract name
                             if "name" in addon:
 
                                 # save
-                                extensionInfo["name"] = addon["name"]
+                                extension_info["name"] = addon["name"]
 
                             # extract description
                             if "description" in addon:
 
                                 # save
-                                extensionInfo["description"] = addon[
+                                extension_info["description"] = addon[
                                     "description"
                                 ].replace("\n", " ")
 
                             # build path
                             # ->should be in the extensions/ folder, under <id>.XPI
                             path = (
-                                os.path.split(firefoxExtensionFile)[0]
+                                os.path.split(firefox_extension_file)[0]
                                 + "/extensions/"
                                 + addon["id"]
                                 + ".xpi"
@@ -435,7 +426,7 @@ class scan(IPlugin):
                                 continue
 
                             # save path
-                            extensionInfo["path"] = path
+                            extension_info["path"] = path
 
                         # json in extensions.json file is formatted another way
                         else:
@@ -447,7 +438,7 @@ class scan(IPlugin):
                             ):
 
                                 # save
-                                extensionInfo["name"] = addon["defaultLocale"]["name"]
+                                extension_info["name"] = addon["defaultLocale"]["name"]
 
                             # extract description
                             if (
@@ -456,14 +447,14 @@ class scan(IPlugin):
                             ):
 
                                 # save
-                                extensionInfo["description"] = addon["defaultLocale"][
+                                extension_info["description"] = addon["defaultLocale"][
                                     "description"
                                 ]
 
                             # build path
                             # ->should be a directory in the extensions/ folder, under <id>
                             path = (
-                                os.path.split(firefoxExtensionFile)[0]
+                                os.path.split(firefox_extension_file)[0]
                                 + "/extensions/"
                                 + addon["id"]
                             )
@@ -475,23 +466,17 @@ class scan(IPlugin):
                                 continue
 
                             # save path
-                            extensionInfo["path"] = path
+                            extension_info["path"] = path
 
                         # save extension id
                         # ->used to prevent dupes
-                        extensionIDs.append(extensionInfo["id"])
+                        extension_ids.append(extension_info["id"])
 
                         # create and append addon (extension)
-                        results.append(extension.Extension(extensionInfo))
+                        results.append(extension.Extension(extension_info))
 
                     # ignore exceptions
-                    except Exception as e:
-
-                        # leave in err msg (for now)
-                        print(e)
-                        traceback.print_exc()
-
-                        # skip/try next
-                        continue
+                    except Exception:  # pylint: disable=broad-except
+                        LOGGER.exception(f"{addon=}")
 
         return results

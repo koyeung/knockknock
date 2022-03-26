@@ -1,17 +1,15 @@
-__author__ = "patrick w"
-
 """
 unclassified items
 
     the OS starts many processes automatically in ways that aren't easily classfied
     (e.g. from the kernel, or other OS processes start em, etc.)
 
-    this plugin dumps the process list and attempts to list all binaries that are running, apparently automatically so..
+    this plugin dumps the process list and attempts to list all binaries that are
+    running, apparently automatically so..
 """
+__author__ = "patrick w"
 
-import glob
 import logging
-import os
 
 # plugin framework import
 from yapsy.IPlugin import IPlugin
@@ -28,48 +26,51 @@ UNCLASSIFIED_NAME = "Unclassified Items"
 UNCLASSIFIED_DESCRIPTION = "Items that are running, but could not be classified"
 
 
-class scan(IPlugin):
+class Scan(IPlugin):
+    """Plugin class."""
 
-    # init results dictionary
-    # ->item name, description, and list
-    def initResults(self, name, description):
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
 
+        ->item name, description, and list
+        """
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
     # invoked by core
     def scan(self):
-
+        """Scan action."""
         # reported path
-        reportedPaths = []
+        reported_paths = []
 
         LOGGER.info("running scan")
 
         # init results
-        results = self.initResults(UNCLASSIFIED_NAME, UNCLASSIFIED_DESCRIPTION)
+        results = self.init_results(UNCLASSIFIED_NAME, UNCLASSIFIED_DESCRIPTION)
 
         # get all running processes
-        processes = utils.getProcessList()
+        processes = utils.get_process_list()
 
         # set processes top parent
         # ->well, besides launchd (pid: 0x1)
-        utils.setFirstParent(processes)
+        utils.set_first_parent(processes)
 
         # add process type (dock or not)
-        utils.setProcessType(processes)
+        utils.set_process_type(processes)
 
         # get all procs that don't have a dock icon
         # ->assume these aren't started by the user
-        nonDockProcs = self.getNonDockProcs(processes)
+        non_dock_procs = self.get_non_dock_procs(processes)
 
         # save all non-dock procs
-        for pid in nonDockProcs:
+        for process in non_dock_procs.values():
 
             # extract path
-            path = nonDockProcs[pid]["path"]
+            path = process["path"]
 
             # ignore dups
-            if path in reportedPaths:
+            if path in reported_paths:
 
                 # skip
                 continue
@@ -85,27 +86,25 @@ class scan(IPlugin):
             results["items"].append(file.File(path))
 
             # record
-            reportedPaths.append(path)
+            reported_paths.append(path)
 
         return results
 
-    # get all procs that don't have a dock icon
-    # ->also make sure the parent isn't dockable
-    def getNonDockProcs(self, processes):
+    @staticmethod
+    def get_non_dock_procs(processes):
+        """get all procs that don't have a dock icon.
 
+        ->also make sure the parent isn't dockable
+        """
         # dictionary of process that aren't dock icon capable
-        nonDockProcs = {}
+        non_dock_procs = {}
 
         # iterate over all processes
         # ->will check time
-        for pid in processes:
-
-            # get current process
-            process = processes[pid]
+        for pid, process in processes.items():
 
             # skip those that don't have parents
             if process["gpid"] not in processes:
-
                 # skip
                 continue
 
@@ -115,10 +114,10 @@ class scan(IPlugin):
             # check if process (and parent!) isn't dockable
             if (
                 utils.PROCESS_TYPE_BG == process["type"]
-                and utils.PROCESS_TYPE_BG == process["type"]
+                and utils.PROCESS_TYPE_BG == parent["type"]
             ):
 
                 # yups, save it
-                nonDockProcs[pid] = process
+                non_dock_procs[pid] = process
 
-        return nonDockProcs
+        return non_dock_procs

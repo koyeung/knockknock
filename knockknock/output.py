@@ -1,57 +1,52 @@
 import json
 
-# project imports
 from . import command, extension, file
 
 
-# json encoder
-class jsonEncoder(json.JSONEncoder):
+class JSONEncoder(json.JSONEncoder):
+    """JSON encoder."""
 
     # automatically invoked
     # ->allows custom JSON encoding
-    def default(self, obj):
+    def default(self, o):
 
         # for file and command objects
         # ->return the objects dictionary
-        if (
-            isinstance(obj, file.File)
-            or isinstance(obj, command.Command)
-            or isinstance(obj, extension.Extension)
-        ):
+        if isinstance(o, (file.File, command.Command, extension.Extension)):
 
             # object dictionary
-            return obj.__dict__
+            return o.__dict__
 
         # other objects
         # ->just super
-        else:
 
-            # super
-            return super(jsonEncoder, self).default(obj)
+        # super
+        return super().default(o)
 
 
-# format the results
-# ->either just pretty for stdout or as JSON
-def formatResults(results, asJSON) -> str:
+def format_results(results, as_json: bool) -> str:
+    """Format the result.
 
+    ->either just pretty for stdout or as JSON
+    """
     # results; formatted
-    formattedResults = ""
+    formatted_results = ""
 
     # cumulative count of all startup objects
-    startupObjCount = 0
+    startup_obj_count = 0
 
     # format as JSON
     # ->uses the jsonDecoder class (above) to dump the objects dictionary
-    if asJSON:
+    if as_json:
 
         # will generate JSON
-        formattedResults = json.dumps(results, cls=jsonEncoder, indent=4)
+        formatted_results = json.dumps(results, cls=JSONEncoder, indent=4)
 
     # pretty print the output for stdout
     else:
 
         # dbg msg
-        formattedResults += "WHO'S THERE:\n"
+        formatted_results += "WHO'S THERE:\n"
 
         # iterate over all results
         for result in _sort_results(results):
@@ -60,31 +55,31 @@ def formatResults(results, asJSON) -> str:
             if result["items"]:
 
                 # format name/type of startup item
-                formattedResults += "\n[" + result["name"] + "]\n"
+                formatted_results += "\n[" + result["name"] + "]\n"
 
             # iterate over each startup object
-            for startupObj in _sort_startup_objs(result["items"]):
+            for startup_obj in _sort_startup_objs(result["items"]):
 
                 # inc count
-                startupObjCount += 1
+                startup_obj_count += 1
 
                 # format object
-                # ->files and commands both implement prettyPrint()
-                formattedResults += startupObj.prettyPrint()
+                # ->files and commands both implement pretty_print()
+                formatted_results += startup_obj.pretty_print()
 
         # none found?
-        if not startupObjCount:
+        if not startup_obj_count:
 
             # nothing found
-            formattedResults += "-> nobody :)\n"
+            formatted_results += "-> nobody :)\n"
 
         # add info about totals
         else:
 
             # add total
-            formattedResults += "\nTOTAL ITEMS FOUND: %d\n" % startupObjCount
+            formatted_results += f"\nTOTAL ITEMS FOUND: {startup_obj_count}\n"
 
-    return formattedResults
+    return formatted_results
 
 
 def _sort_results(results):

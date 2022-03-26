@@ -1,6 +1,6 @@
 [Core]
 Name = Browser extension scanner
-Module = browserExtension
+Module = browser_extension
 
 [Documentation]
 Author = Patrick W, et. al

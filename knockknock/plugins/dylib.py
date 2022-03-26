@@ -1,14 +1,12 @@
+"""dylibs (loaded via DYLD_INSERT_LIBRARIES).
+
+the DYLD_INSERT_LIBRARIES environment variable can be set to the path of a dynamic library (.dylib)
+
+for local settings, the plugin scans plists of launch daemons and agents,
+and all installed apps to determine if any dylibs are set for global settings, the plugin...
+"""
 __author__ = "patrick w"
 
-"""
-dylibs (loaded via DYLD_INSERT_LIBRARIES)
-
-    the DYLD_INSERT_LIBRARIES environment variable can be set to the path of a dynamic library (.dylib)
-
-    for local settings, the plugin scans plists of launch daemons and agents, and all installed apps to determine if any dylibs are set
-    for global settings, the plugin...
-
-"""
 
 # for launch agents
 # edit com.blah.blah.plist
@@ -24,7 +22,8 @@ dylibs (loaded via DYLD_INSERT_LIBRARIES)
 # 	  <key>DYLD_INSERT_LIBRARIES</key>
 # 	  <string>/path/to/dylib</string>
 # 	  </dict>
-# /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -v -f /Applications/ApplicationName.app
+# /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework
+# /Support/lsregister -v -f /Applications/ApplicationName.app
 
 import glob
 import logging
@@ -61,37 +60,39 @@ INSERTED_DYNAMIC_LIBRARIES_DESCRIPTION = (
 )
 
 
-class scan(IPlugin):
+class Scan(IPlugin):
+    """Plugin class."""
 
-    # init results dictionary
-    # ->item name, description, and list
-    def initResults(self, name, description):
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
 
+        ->item name, description, and list
+        """
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
-    # invoked by core
     def scan(self):
-
+        """Scan action."""
         # results
         results = []
 
         LOGGER.info("running scan")
 
         # init results
-        results = self.initResults(
+        results = self.init_results(
             INSERTED_DYNAMIC_LIBRARIES_NAME, INSERTED_DYNAMIC_LIBRARIES_DESCRIPTION
         )
 
         # scan launch items for inserted dylibs
-        launchItems = scanLaunchItems(LAUNCH_ITEMS_DIRECTORIES)
-        if launchItems:
+        launch_items = _scan_launch_items(LAUNCH_ITEMS_DIRECTORIES)
+        if launch_items:
 
             # save
-            results["items"].extend(launchItems)
+            results["items"].extend(launch_items)
 
         # scan all installed applications for inserted dylibs
-        applications = scanApplications()
+        applications = _scan_applications()
         if applications:
 
             # save
@@ -100,16 +101,18 @@ class scan(IPlugin):
         return results
 
 
-# scan launch agents or daemons
-# for each directory, load all plist's and look for 'DYLD_INSERT_LIBRARIES' key within a 'EnvironmentVariables'
-def scanLaunchItems(directories):
+def _scan_launch_items(directories):
+    """Scan launch agents or daemons.
 
+    for each directory, load all plist's and look for 'DYLD_INSERT_LIBRARIES' key
+    within a 'EnvironmentVariables'
+    """
     # launch items
-    launchItems = []
+    launch_items = []
 
     # expand directories
     # ->ensures '~'s are expanded to all user's
-    directories = utils.expandPaths(directories)
+    directories = utils.expand_paths(directories)
 
     # get all files (plists) in launch daemon/agent directories
     for directory in directories:
@@ -117,34 +120,36 @@ def scanLaunchItems(directories):
         LOGGER.info("scanning %s", directory)
 
         # get launch daemon/agent plist
-        launchItems.extend(glob.glob(directory + "*"))
+        launch_items.extend(glob.glob(directory + "*"))
 
     # check all plists for DYLD_INSERT_LIBRARIES
     # ->for each found, creates file object
-    return scanPlists(launchItems, LAUNCH_ITEM_DYLD_KEY)
+    return _scan_plists(launch_items, LAUNCH_ITEM_DYLD_KEY)
 
 
-# scan all installed applications
-# for each directory, load all apps' Info.plist and look for 'DYLD_INSERT_LIBRARIES' key within a 'LSEnvironment'
-def scanApplications():
+def _scan_applications():
+    """Scan all installed applications.
 
+    for each directory, load all apps' Info.plist and look for 'DYLD_INSERT_LIBRARIES' key
+    within a 'LSEnvironment'
+    """
     # app plists
-    appPlists = []
+    app_plists = []
 
     LOGGER.info("generating list of all installed apps (this may take some time)")
 
     # get all installed apps
-    installedApps = utils.getInstalledApps()
+    installed_apps = utils.get_installed_apps()
 
     # sanity check
     # ->using system_profiler (to get installed apps) can timeout/throw exception, etc
-    if not installedApps:
+    if not installed_apps:
 
         # bail
         return None
 
     # now, get Info.plist for each app
-    for app in installedApps:
+    for app in installed_apps:
 
         # skip apps that don't have a path
         if not "path" in app:
@@ -153,7 +158,7 @@ def scanApplications():
             continue
 
         # get/load app's Info.plist
-        plist = utils.loadInfoPlist(app["path"])
+        plist = utils.load_info_plist(app["path"])
 
         # skip apps that don't have Info.plist
         if not plist:
@@ -162,17 +167,18 @@ def scanApplications():
             continue
 
         # save plist for processing
-        appPlists.append(plist)
+        app_plists.append(plist)
 
     # check all plists for DYLD_INSERT_LIBRARIES
     # ->for each found, creates file object
-    return scanPlists(appPlists, APPLICATION_DYLD_KEY, isLoaded=True)
+    return _scan_plists(app_plists, APPLICATION_DYLD_KEY, is_loaded=True)
 
 
-# scan a list of plist
-# ->check for 'DYLD_INSERT_LIBRARIES' in plist, and if found, create file obj/result
-def scanPlists(plists, key, isLoaded=False):
+def _scan_plists(plists, key, is_loaded=False):
+    """Scan a list of plist.
 
+    ->check for 'DYLD_INSERT_LIBRARIES' in plist, and if found, create file obj/result
+    """
     # results
     results = []
 
@@ -190,14 +196,14 @@ def scanPlists(plists, key, isLoaded=False):
         try:
 
             # load contents of plist if needed
-            if not isLoaded:
+            if not is_loaded:
 
                 # save path
-                plistPath = plist
+                plist_path = plist
 
                 # load it and check
-                loadedPlist = utils.loadPlist(plist)
-                if not loadedPlist:
+                loaded_plist = utils.load_plist(plist)
+                if not loaded_plist:
 
                     # skip
                     continue
@@ -207,37 +213,38 @@ def scanPlists(plists, key, isLoaded=False):
             else:
 
                 # set
-                loadedPlist = plist
+                loaded_plist = plist
 
                 # get path
-                plistPath = utils.getPathFromPlist(loadedPlist)
+                plist_path = utils.get_path_from_plist(loaded_plist)
 
             # check for env key
-            # -> will be either 'EnvironmentVariables' or 'LSEnvironment' depending if launch item or app
-            if key in loadedPlist:
+            # -> will be either 'EnvironmentVariables' or 'LSEnvironment'
+            # depending if launch item or app
+            if key in loaded_plist:
 
                 # check for/save DYLD_INSERT_LIBRARIES
-                if "DYLD_INSERT_LIBRARIES" in loadedPlist[key]:
-
-                    # create file obj and append to results
-                    results.append(
-                        file.File(loadedPlist[key]["DYLD_INSERT_LIBRARIES"], plistPath)
-                    )
-
-                # check for/save __XPC_DYLD_INSERT_LIBRARIES
-                if "__XPC_DYLD_INSERT_LIBRARIES" in loadedPlist[key]:
+                if "DYLD_INSERT_LIBRARIES" in loaded_plist[key]:
 
                     # create file obj and append to results
                     results.append(
                         file.File(
-                            loadedPlist[key]["__XPC_DYLD_INSERT_LIBRARIES"], plistPath
+                            loaded_plist[key]["DYLD_INSERT_LIBRARIES"], plist_path
+                        )
+                    )
+
+                # check for/save __XPC_DYLD_INSERT_LIBRARIES
+                if "__XPC_DYLD_INSERT_LIBRARIES" in loaded_plist[key]:
+
+                    # create file obj and append to results
+                    results.append(
+                        file.File(
+                            loaded_plist[key]["__XPC_DYLD_INSERT_LIBRARIES"], plist_path
                         )
                     )
 
         # ignore exceptions
-        except Exception as e:
-
-            # ignore
-            pass
+        except Exception:  # pylint: disable=broad-except
+            LOGGER.exception(f"{plist=}")
 
     return results

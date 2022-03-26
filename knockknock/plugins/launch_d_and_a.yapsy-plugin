@@ -1,6 +1,6 @@
 [Core]
 Name = Launch Daemon and Agent Scanner
-Module = launchDandA
+Module = launch_d_and_a
 
 [Documentation]
 Author = Patrick W

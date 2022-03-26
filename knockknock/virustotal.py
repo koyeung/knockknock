@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #
-# KnockKnock by Patrick Wardle is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
+# KnockKnock by Patrick Wardle is licensed under
+# a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
 import json
@@ -10,7 +11,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-# project imports
 from . import file
 
 LOGGER = logging.getLogger(__name__)
@@ -22,7 +22,8 @@ _VT_URL = "https://www.virustotal.com/partners/sysinternals/file-reports?apikey=
 _VT_API_KEY = "bef728a398d7b666c5fbdc6f64671161284ef49c23e270ac540ada64893b433b"
 
 
-def processResults(results):
+def process_results(results):
+    """Process results."""
 
     vt_results = {}
 
@@ -31,56 +32,56 @@ def processResults(results):
     items = []
 
     # queried startup items
-    queriedItems = set()
+    queried_items = set()
 
     # process items, 25 at a time
     for result in results:
 
         # iterate over each plugin's results
-        for startupObj in result["items"]:
+        for startup_obj in result["items"]:
 
             # data for item (file)
-            itemData = {}
+            item_data = {}
 
             # only process files
             # ->note, plugins don't be mixed item items, so can bail here
-            if not isinstance(startupObj, file.File):
+            if not isinstance(startup_obj, file.File):
 
                 # stop processing this item group
                 break
 
             # skip items that don't have hashes
-            if not startupObj.hash:
+            if not startup_obj.hash:
 
                 # skip
                 continue
 
             # skip values that already have been queried
-            if startupObj.hash in queriedItems:
+            if startup_obj.hash in queried_items:
 
                 # skip
                 continue
 
             # auto start location
-            itemData["autostart_location"] = result["name"]
+            item_data["autostart_location"] = result["name"]
 
             # set item name
-            itemData["autostart_entry"] = startupObj.name
+            item_data["autostart_entry"] = startup_obj.name
 
             # set item path
-            itemData["image_path"] = startupObj.path
+            item_data["image_path"] = startup_obj.path
 
             # set hash
-            itemData["hash"] = startupObj.hash
+            item_data["hash"] = startup_obj.hash
 
             # set creation times
-            itemData["creation_datetime"] = os.path.getctime(startupObj.path)
+            item_data["creation_datetime"] = os.path.getctime(startup_obj.path)
 
             # add item info to list
-            items.append(itemData)
+            items.append(item_data)
 
             # save in set of queried items
-            queriedItems.add(startupObj.hash)
+            queried_items.add(startup_obj.hash)
 
             # when we've got 25
             # ->query VT
@@ -93,7 +94,7 @@ def processResults(results):
                 items = []
 
     # query any remaining items
-    if len(items):
+    if items:
 
         # query
         vt_results.update(_query_vt(items))
@@ -103,25 +104,25 @@ def processResults(results):
     for result in results:
 
         # iterate over each plugin's results
-        for startupObj in result["items"]:
+        for startup_obj in result["items"]:
 
             # skip non-item files, or items that weren't queried
             if (
-                not isinstance(startupObj, file.File)
-                or startupObj.hash not in queriedItems
+                not isinstance(startup_obj, file.File)
+                or startup_obj.hash not in queried_items
             ):
 
                 # skip
                 continue
 
             # skip items that didn't get a response
-            if startupObj.hash not in vt_results:
+            if startup_obj.hash not in vt_results:
 
                 # skip
                 continue
 
             # add VT results to item
-            startupObj.vtRatio = vt_results[startupObj.hash]
+            startup_obj.vt_ratio = vt_results[startup_obj.hash]
 
     return vt_results
 
@@ -132,13 +133,13 @@ def _query_vt(items):
     query_results = {}
 
     # headers
-    requestHeaders = {}
+    request_headers = {}
 
     # set content type
-    requestHeaders["Content-Type"] = "application/json"
+    request_headers["Content-Type"] = "application/json"
 
     # set user agent
-    requestHeaders["User-Agent"] = "VirusTotal"
+    request_headers["User-Agent"] = "VirusTotal"
 
     # wrap
     try:
@@ -147,30 +148,29 @@ def _query_vt(items):
         request = urllib.request.Request(
             _VT_URL + _VT_API_KEY,
             json.dumps(items, indent=4).encode("utf-8"),
-            headers=requestHeaders,
+            headers=request_headers,
         )
 
         # make request
-        response = urllib.request.urlopen(request)
+        with urllib.request.urlopen(request) as response:
 
-        # convert response to JSON
-        vtResponse = json.loads(response.read())
+            # convert response to JSON
+            vt_response = json.loads(response.read())
 
         # process response
         # ->should be a list of items, within the 'data' key
-        if "data" in vtResponse:
+        if "data" in vt_response:
 
             # process/parse all
-            for item in vtResponse["data"]:
+            for item in vt_response["data"]:
 
                 # process
                 _put_item_to_results(item, results=query_results)
 
     # exceptions
     # ->ignore (likely network related)
-    except Exception as e:
+    except Exception:  # pylint: disable=broad-except
         LOGGER.exception("failed to query virustotal")
-        pass
 
     return query_results
 
@@ -183,19 +183,17 @@ def _put_item_to_results(item, /, *, results) -> None:
     found = item["found"]
 
     # extract hash
-    hash = item["hash"]
+    hash_ = item["hash"]
 
     # when item is found
     # ->save detection ratio
     if found:
 
         # save detection ratio
-        results[hash] = item["detection_ratio"]
+        results[hash_] = item["detection_ratio"]
 
     # otherwise indicate it wasn't found
     else:
 
         # not found
-        results[hash] = "not found"
-
-    return
+        results[hash_] = "not found"

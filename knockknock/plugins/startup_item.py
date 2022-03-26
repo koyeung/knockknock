@@ -1,5 +1,3 @@
-__author__ = "patrick w"
-
 """
 startup items
 
@@ -7,10 +5,12 @@ startup items
 
     to create a startup item,
         1) create a folder under one of these directories
-        2) create a StartupParameters.plist file and script file that matches the name of the folder created in step 1
+        2) create a StartupParameters.plist file and script file that matches the name of the folder
+           created in step 1
 
     this plugin examines files within the OS's startup items directories to find any startup items
 """
+__author__ = "patrick w"
 
 import glob
 import logging
@@ -20,7 +20,7 @@ import os
 from yapsy.IPlugin import IPlugin
 
 # project imports
-from knockknock import file, utils
+from knockknock import file
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,44 +38,48 @@ STARTUP_ITEM_NAME = "Startup Items"
 STARTUP_ITEM_DESCRIPTION = "Binaries that are..."
 
 
-class scan(IPlugin):
+class Scan(IPlugin):
+    """Plugin class."""
 
-    # init results dictionary
-    # ->plugin name, description, and list
-    def initResults(self, name, description):
+    @staticmethod
+    def init_results(name, description):
+        """Init results dictionary.
 
+        ->item name, description, and list
+        """
         # results dictionary
         return {"name": name, "description": description, "items": []}
 
-    # invoked by core
     def scan(self):
-
+        """Scan action."""
         LOGGER.info("running scan")
 
         # init results dictionary
-        results = self.initResults(STARTUP_ITEM_NAME, STARTUP_ITEM_DESCRIPTION)
+        results = self.init_results(STARTUP_ITEM_NAME, STARTUP_ITEM_DESCRIPTION)
 
         # iterate over all base startup item directories
         # ->look for startup items
-        for startupItemBaseDirectory in STARTUP_ITEM_BASE_DIRECTORIES:
+        for startup_item_base_directory in STARTUP_ITEM_BASE_DIRECTORIES:
 
             # get sub directories
             # ->these are the actual startup items
-            startupItemDirectories = glob.glob(startupItemBaseDirectory + "*")
+            startup_item_directories = glob.glob(startup_item_base_directory + "*")
 
             # check the sub directory (which is likely a startup item)
             # ->there should be a file (script) which matches the name of the sub-directory
-            for startupItemDirectory in startupItemDirectories:
+            for startup_item_directory in startup_item_directories:
 
                 # init the startup item
-                startupItem = (
-                    startupItemDirectory + "/" + os.path.split(startupItemDirectory)[1]
+                startup_item = (
+                    startup_item_directory
+                    + "/"
+                    + os.path.split(startup_item_directory)[1]
                 )
 
                 # check if it exists
-                if os.path.exists(startupItem):
+                if os.path.exists(startup_item):
 
                     # save
-                    results["items"].append(file.File(startupItem))
+                    results["items"].append(file.File(startup_item))
 
         return results

@@ -1,6 +1,6 @@
 [Core]
 Name = Authorization Plugin Scanner
-Module = authorizationPlugin
+Module = authorization_plugin
 
 [Documentation]
 Author = Patrick W
