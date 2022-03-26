@@ -11,7 +11,7 @@ import sys
 
 from yapsy.PluginManager import PluginManager
 
-from . import file, output, utils, virusTotal
+from . import file, output, utils, virustotal
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ def knocknock():
 
         # process
         # ->will query VT and add VT info to all files
-        virusTotal.processResults(results)
+        virustotal.process_results(results)
 
     # format output
     # ->normal output or JSON
