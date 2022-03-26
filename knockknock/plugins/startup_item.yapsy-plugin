@@ -1,6 +1,6 @@
 [Core]
 Name = Startup Items Scanner
-Module = startupItem
+Module = startup_item
 
 [Documentation]
 Author = Patrick W

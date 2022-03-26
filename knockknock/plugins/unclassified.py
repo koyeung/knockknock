@@ -64,7 +64,7 @@ class Scan(IPlugin):
         non_dock_procs = self.get_non_dock_procs(processes)
 
         # save all non-dock procs
-        for pid, process in non_dock_procs.items():
+        for process in non_dock_procs.values():
 
             # extract path
             path = process["path"]

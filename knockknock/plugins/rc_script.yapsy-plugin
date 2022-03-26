@@ -1,6 +1,6 @@
 [Core]
 Name = RC Script Scanner
-Module = rcScript
+Module = rc_script
 
 [Documentation]
 Author = Patrick W

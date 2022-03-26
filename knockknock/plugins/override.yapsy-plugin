@@ -1,6 +1,6 @@
 [Core]
 Name = Overrides Scanner
-Module = overRide
+Module = override
 
 [Documentation]
 Author = Patrick W
