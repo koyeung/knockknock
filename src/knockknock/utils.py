@@ -15,12 +15,14 @@ import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, NamedTuple, Optional
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, cast
 
 import Foundation
 import Security
 from Foundation import NSURL, NSBundle, NSDictionary, NSString
 from Security import errSecSuccess
+
+from ._types import ProcessInfo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +69,7 @@ def get_plugins_directory() -> Path:
     return Path(knockknock_plugins_spec.submodule_search_locations[0])
 
 
-def load_info_plist(bundle_path):
+def load_info_plist(bundle_path: str):
     """Load a bundle's Info.plist."""
     main_bundle = NSBundle.bundleWithPath_(bundle_path)
 
@@ -152,7 +154,7 @@ def load_plist(path: str):
     return NSDictionary.dictionaryWithContentsOfFile_(path)
 
 
-def is_kext(path):
+def is_kext(path: str):
     """Determine if a bundle is a kext.
 
     checks CFBundlePackageType for 'KEXT'
@@ -279,7 +281,7 @@ def check_signature(file: str):
     return errSecSuccess, signing_info
 
 
-def parse_bash_file(file_path):
+def parse_bash_file(file_path: str):
     """Parse a bash file.
 
     (yes, this is a hack and needs to be improved)
@@ -287,7 +289,7 @@ def parse_bash_file(file_path):
     see http://tldp.org/LDP/abs/html/functions.html for info about bash functions
     """
     # list of commands
-    commands = []
+    commands: List[str] = []
 
     # flag indicating code is in function
     in_function = False
@@ -387,7 +389,7 @@ def parse_bash_file(file_path):
     return commands
 
 
-def find_bundles(start_directory, pattern, depth) -> List[str]:
+def find_bundles(start_directory: str, pattern: str, depth: int) -> List[str]:
     """Find bundles paths."""
     # list of files
     matched_bundles = []
@@ -504,7 +506,7 @@ def md5sum(filename: str) -> Optional[str]:
         return None
 
 
-def get_process_list():
+def get_process_list() -> Dict[int, ProcessInfo]:
     """Use 'ps' to get list of running processes."""
 
     # process info
@@ -521,7 +523,7 @@ def get_process_list():
     for line in ps_output.split("\n")[1:]:
 
         # dictionary for process info
-        process_info = {}
+        process_info: ProcessInfo = {}
 
         try:
 
@@ -536,7 +538,8 @@ def get_process_list():
 
             # pid
             # ->key, but also but save oid into dictionary too
-            process_info["pid"] = int(components[0])
+            pid = int(components[0])
+            process_info["pid"] = pid
 
             # ppid
             process_info["ppid"] = int(components[1])
@@ -552,7 +555,7 @@ def get_process_list():
             process_info["path"] = components[4]
 
             # add to list
-            processes_info[process_info["pid"]] = process_info
+            processes_info[pid] = process_info
 
         except Exception:  # pylint: disable=broad-except
             LOGGER.exception("get_process_list exception happens")
@@ -562,7 +565,7 @@ def get_process_list():
     return processes_info
 
 
-def set_first_parent(processes):
+def set_first_parent(processes: Mapping[int, ProcessInfo]):
     """Find each parent's top parent (if its not launchd)."""
 
     # iterate over all processes
@@ -574,29 +577,33 @@ def set_first_parent(processes):
         # default gpid
         process["gpid"] = -1
 
+        ppid = cast(int, process["ppid"])
+
         # skip if ppid is 0x0 or 0x1 (launchd)
-        if process["ppid"] == 0x0 or process["ppid"] == 0x1:
+        if ppid == 0x0 or ppid == 0x1:
 
             # set to self parent
-            process["gpid"] = process["ppid"]
+            process["gpid"] = ppid
 
             # do next
             continue
 
         # sanity check
-        if process["ppid"] not in processes:
+        if ppid not in processes:
 
             # try next
             continue
 
         # get next parent
-        parent_process = processes[process["ppid"]]
+        parent_process = processes[ppid]
 
         # search for parent right below launchd (pid 0x1)
         while True:
 
+            parent_ppid = cast(int, parent_process["ppid"])
+
             # found it?
-            if 0x1 == parent_process["ppid"]:
+            if parent_ppid == 0x1:
 
                 # save this as the gpid
                 process["gpid"] = parent_process["pid"]
@@ -605,7 +612,7 @@ def set_first_parent(processes):
                 break
 
             # sanity check
-            if parent_process["ppid"] not in processes:
+            if parent_ppid not in processes:
 
                 # couldn't find parent's pid
                 # ->just save current parent's pid as gpid
@@ -615,10 +622,10 @@ def set_first_parent(processes):
                 break
 
             # try next
-            parent_process = processes[parent_process["ppid"]]
+            parent_process = processes[parent_ppid]
 
 
-def set_process_type(processes):
+def set_process_type(processes: Mapping[int, ProcessInfo]):
     """Classify each process on whether it has a dock icon or not.
 
     ->sets process 'type' key
@@ -678,7 +685,7 @@ def set_process_type(processes):
             continue
 
 
-def find_app_directory(binary):
+def find_app_directory(binary) -> Optional[str]:
     """Find binary's .app directory."""
     # app dir
     app_directory = None
@@ -718,7 +725,7 @@ def find_app_directory(binary):
     return app_directory
 
 
-def convert_elapsed_to_abs(elapsed_time):
+def convert_elapsed_to_abs(elapsed_time) -> int:
     """Convert elapsed time (from ps -o etime) to absolute time in seceond.
 
     elapsed time format: [[dd-]hh:]mm:ss
@@ -752,7 +759,7 @@ def convert_elapsed_to_abs(elapsed_time):
     return absolute_time
 
 
-def which(binary):
+def which(binary: str) -> Optional[str]:
     """Find an executable (a la 'which').
 
     -> based on: http://nullege.com/codes/search/distutils.spawn.find_executable

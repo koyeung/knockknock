@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Dict, List, Optional
 
 from yapsy.PluginManager import PluginManager
 
@@ -109,7 +110,7 @@ def knocknock():
     print(formatted_results.encode("utf-8", "xmlcharrefreplace").decode())
 
 
-def remove_dups_from_unclassified(results):
+def remove_dups_from_unclassified(results) -> None:
     """Filter out dups in unclassified plugin.
 
     ->needed, since it just looks at the proc list so grabs items that are likely
@@ -131,14 +132,14 @@ def remove_dups_from_unclassified(results):
 
     # just want the dictionary
     # ->first item
-    unclassified_items = unclassified_items[0]
+    first_unclassified_items = unclassified_items[0]
 
     # get all hashes
     hashes = all_hashes(results)
 
     # look at each unclass item
     # ->remove it if its reported elsewhere
-    for unclassified_item in unclassified_items["items"]:
+    for unclassified_item in first_unclassified_items["items"]:
 
         # only keep otherwise unknown items
         if 0x1 == hashes.count(unclassified_item.hash):
@@ -147,9 +148,7 @@ def remove_dups_from_unclassified(results):
             unique_items.append(unclassified_item)
 
     # update
-    unclassified_items["items"] = unique_items
-
-    return
+    first_unclassified_items["items"] = unique_items
 
 
 def all_hashes(results):
@@ -274,7 +273,7 @@ def _get_plugin_manager() -> PluginManager:
     return plugin_manager
 
 
-def _list_plugins(plugin_manager) -> None:
+def _list_plugins(plugin_manager: PluginManager) -> None:
 
     LOGGER.info("listing plugins")
 
@@ -287,10 +286,10 @@ def _list_plugins(plugin_manager) -> None:
         print(f"{module_name} -> {plugin_name}")
 
 
-def _scan(*, plugin_name, plugin_manager):
+def _scan(*, plugin_name: Optional[str], plugin_manager: PluginManager) -> List[Dict]:
 
     # results
-    results = []
+    results: List[Dict] = []
 
     # flag indicating plugin was found
     # ->only relevant when a plugin name is specified
@@ -361,11 +360,8 @@ def _scan(*, plugin_name, plugin_manager):
     # sanity check
     # -> make sure if a specific plugin was specified, it was found/exec'd
     if plugin_name and not found_plugin:
-
         LOGGER.error("did not find requested plugin")
-
-        # reset results
-        results = None
+        assert not results, "empty results"
 
     return results
 
