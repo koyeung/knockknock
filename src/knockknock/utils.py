@@ -27,9 +27,6 @@ LOGGER = logging.getLogger(__name__)
 # from (carbon) MacErrors.h
 kPOSIXErrorEACCES = 100013  # pylint: disable=invalid-name
 
-# base directory for users
-USER_BASE_DIRECTORY = "/Users/"
-
 # process type, not dock
 PROCESS_TYPE_BG = 0x0
 
