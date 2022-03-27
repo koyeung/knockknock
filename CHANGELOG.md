@@ -7,6 +7,11 @@ Versions before 0.1.0 are untracked
 
 
 ## [Unreleased]
+### Changed
+* Don't use key `CFBundleInfoPlistURL` of `Info.plist` to retrieve `Info.plist` path
+
+### Fixed
+* `knockknock.utils.get_installed_apps` fails silently
 
 ## [0.2.0] - 2022-03-28
 ### Added

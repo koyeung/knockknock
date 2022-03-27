@@ -77,11 +77,6 @@ def load_info_plist(bundle_path: str):
     return main_bundle.infoDictionary()
 
 
-def get_path_from_plist(loaded_plist):
-    """Return path of Info.plist, given a loaded plist from a bundle."""
-    return loaded_plist["CFBundleInfoPlistURL"].fileSystemRepresentation()
-
-
 def get_binary_from_bundle(bundle_path) -> Optional[str]:
     """Get a bundle's executable binary."""
     main_bundle = NSBundle.bundleWithPath_(bundle_path)
@@ -430,9 +425,6 @@ def get_installed_apps():
 
     ->invokes system_profiler/SPApplicationsDataType
     """
-    # list of apps
-    installed_apps = None
-
     # command-line for system_profiler
     # ->xml, mini, etc.
     command_line = [
@@ -449,24 +441,18 @@ def get_installed_apps():
         # add timeout
         command_line.extend(["-timeout", "60"])
 
-    # wrap
     try:
-
         # get info about all installed apps via 'system_profiler'
-        # ->(string)output is read in as plist
-        system_profile_info = plistlib.readPlistFromString(
-            subprocess.check_output(command_line)
-        )
+        # -> bytes output is read in as plist
+        system_profile_info = plistlib.loads(subprocess.check_output(command_line))
 
         # get all installed apps
         # ->under '_items' key
         installed_apps = system_profile_info[0]["_items"]
 
-    # exception
     except Exception:  # pylint: disable=broad-except
-
-        # reset
-        installed_apps = None
+        LOGGER.exception("get_installed_apps; bypassing get installed apps")
+        return None
 
     return installed_apps
 
