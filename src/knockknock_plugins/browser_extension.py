@@ -15,11 +15,8 @@ import os
 # pylint: disable=no-member
 import CoreServices
 
-# plugin framework import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import extension, utils
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -53,18 +50,8 @@ FIREFOX_EXTENSIONS_NAME = "Firefox Browser Extensions"
 FIREFOX_EXTENSIONS_DESCRIPTION = "Code that is hosted and executed by Firefox"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     def scan(self):
         """Scan action."""

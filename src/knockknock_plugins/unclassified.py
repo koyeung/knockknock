@@ -11,11 +11,8 @@ __author__ = "patrick w"
 
 import logging
 
-# plugin framework import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import file, utils
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,17 +23,8 @@ UNCLASSIFIED_NAME = "Unclassified Items"
 UNCLASSIFIED_DESCRIPTION = "Items that are running, but could not be classified"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     # invoked by core
     def scan(self):

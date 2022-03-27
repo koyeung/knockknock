@@ -8,11 +8,8 @@ __author__ = "patrick w"
 import logging
 import os
 
-# plugin framwork import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import command, file, utils
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,17 +33,8 @@ LOGOUT_HOOK_NAME = "Logout Hook"
 LOGOUT_HOOK_DESCRIPTION = "Command that is executed at logout"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     def scan(self):
         """Scan action."""
