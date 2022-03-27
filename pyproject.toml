@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Knock Knock - who's there?"
 authors = ["Your Name <you@example.com>"]
 license = "LICENSE"
+packages = [
+    { include="knockknock", from="src" },
+    { include="knockknock_plugins", from="src" },    
+]
 
 [tool.poetry.scripts]
 knockknock = 'knockknock.knockknock:knocknock'

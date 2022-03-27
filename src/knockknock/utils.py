@@ -7,6 +7,7 @@ __author__ = "patrick"
 import collections
 import functools
 import hashlib
+import importlib
 import logging
 import os
 import os.path
@@ -59,7 +60,8 @@ def get_kk_directory() -> Path:
 
 def get_plugins_directory() -> Path:
     """Get path of plugin directory."""
-    return get_kk_directory() / PLUGIN_DIR
+    knockknock_plugins_spec = importlib.util.find_spec("knockknock_plugins")
+    return Path(knockknock_plugins_spec.submodule_search_locations[0])
 
 
 def load_info_plist(bundle_path):
