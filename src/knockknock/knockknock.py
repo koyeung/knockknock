@@ -8,6 +8,7 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 
 from yapsy.PluginManager import PluginManager
 
@@ -274,14 +275,13 @@ def _list_plugins(plugin_manager) -> None:
 
     LOGGER.info("listing plugins")
 
-    # iterate over all plugins
-    for plugin in sorted(
-        plugin_manager.getPluginsOfCategory(_KK_PLUGINS_CATEGORY), key=lambda x: x.name
-    ):
+    plugins = (
+        (plugin.name, Path(plugin.path).name)
+        for plugin in plugin_manager.getPluginsOfCategory(_KK_PLUGINS_CATEGORY)
+    )
 
-        # dbg msg
-        # ->always use print, since -v might not have been used
-        print(f"{os.path.split(plugin.path)[1]} -> {plugin.name}")
+    for plugin_name, module_name in sorted(plugins):
+        print(f"{module_name} -> {plugin_name}")
 
 
 def _scan(*, plugin_name, plugin_manager):

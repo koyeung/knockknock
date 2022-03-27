@@ -4,10 +4,9 @@ __author__ = "patrick"
 # names are lazily loaded in pyobjc modules
 # pylint: disable=no-name-in-module,no-member
 
-import collections
 import functools
 import hashlib
-import importlib
+import importlib.util
 import logging
 import os
 import os.path
@@ -40,17 +39,17 @@ PROCESS_TYPE_DOCK = 0x1
 # directory containing plugins
 PLUGIN_DIR = "plugins"
 
+#: typed namedtuple for major, minor version
+Version = NamedTuple("Version", [("major", int), ("minor", int)])
 
-def get_os_version() -> NamedTuple:
+
+def get_os_version() -> Version:
     """Return major and minor version of macOS."""
     # get version (as string)
     version, _, _ = platform.mac_ver()
     major, minor = version.split(".")[:2]
 
-    return collections.namedtuple("Version", ["major", "minor"])(
-        major=int(major),
-        minor=int(minor),
-    )
+    return Version(int(major), int(minor))
 
 
 def get_kk_directory() -> Path:
@@ -61,6 +60,11 @@ def get_kk_directory() -> Path:
 def get_plugins_directory() -> Path:
     """Get path of plugin directory."""
     knockknock_plugins_spec = importlib.util.find_spec("knockknock_plugins")
+    assert knockknock_plugins_spec, "unable to find module spec of knockknock_plugins"
+
+    assert (
+        knockknock_plugins_spec.submodule_search_locations
+    ), "knockknock_plugins submodule_search_locations not exists"
     return Path(knockknock_plugins_spec.submodule_search_locations[0])
 
 
