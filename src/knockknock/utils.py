@@ -36,6 +36,9 @@ PROCESS_TYPE_DOCK = 0x1
 #: typed namedtuple for major, minor version
 Version = NamedTuple("Version", [("major", int), ("minor", int)])
 
+#: package contains plugins
+KNOCKKNOCK_PLUGINS = "knockknock_plugins"
+
 
 def get_os_version() -> Version:
     """Return major and minor version of macOS."""
@@ -53,12 +56,14 @@ def get_kk_directory() -> Path:
 
 def get_plugins_directory() -> Path:
     """Get path of plugin directory."""
-    knockknock_plugins_spec = importlib.util.find_spec("knockknock_plugins")
-    assert knockknock_plugins_spec, "unable to find module spec of knockknock_plugins"
+    knockknock_plugins_spec = importlib.util.find_spec(KNOCKKNOCK_PLUGINS)
+    assert (
+        knockknock_plugins_spec
+    ), f"unable to find module spec of {KNOCKKNOCK_PLUGINS}"
 
     assert (
         knockknock_plugins_spec.submodule_search_locations
-    ), "knockknock_plugins submodule_search_locations not exists"
+    ), f"{KNOCKKNOCK_PLUGINS} submodule_search_locations not exists"
     return Path(knockknock_plugins_spec.submodule_search_locations[0])
 
 
