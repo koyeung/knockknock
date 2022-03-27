@@ -348,7 +348,7 @@ def parse_bash_file(file_path: str):
         if in_function:
 
             # check for end of function
-            if stripped_line.startswith("}") and 0 == bracket_count:
+            if stripped_line.startswith("}") and bracket_count == 0:
 
                 # end of function
                 in_function = False
@@ -580,7 +580,7 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
         ppid = cast(int, process["ppid"])
 
         # skip if ppid is 0x0 or 0x1 (launchd)
-        if ppid == 0x0 or ppid == 0x1:
+        if ppid in (0x0, 0x1):
 
             # set to self parent
             process["gpid"] = ppid
@@ -666,7 +666,7 @@ def set_process_type(processes: Mapping[int, ProcessInfo]):
 
             # plist that have a LSUIElement and its set to 0x1
             # ->background app
-            if "LSUIElement" in info_plist and 0x1 == info_plist["LSUIElement"]:
+            if "LSUIElement" in info_plist and info_plist["LSUIElement"] == 0x1:
 
                 # set as non-dock
                 process["type"] = PROCESS_TYPE_BG

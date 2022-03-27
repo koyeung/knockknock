@@ -163,7 +163,7 @@ class File:
 
         # on success
         # ->save into class var
-        if 0 == status:
+        if status == 0:
 
             # save sig status
             self.signature_status = signing_info["status"]

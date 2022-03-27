@@ -142,7 +142,7 @@ def remove_dups_from_unclassified(results) -> None:
     for unclassified_item in first_unclassified_items["items"]:
 
         # only keep otherwise unknown items
-        if 0x1 == hashes.count(unclassified_item.hash):
+        if hashes.count(unclassified_item.hash) == 0x1:
 
             # save
             unique_items.append(unclassified_item)
