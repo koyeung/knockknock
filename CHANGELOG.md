@@ -7,6 +7,8 @@ Versions before 0.1.0 are untracked
 
 
 ## [Unreleased]
+
+## [0.2.0] - 2022-03-28
 ### Added
 * Base class for `KnockKnock` plugins
 
@@ -34,5 +36,6 @@ Versions before 0.1.0 are untracked
 * Reorganize project files structure
 * Sort results
 
-[Unreleased]: https://github.com/koyeung/knockknock/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/koyeung/knockknock/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/koyeung/knockknock/releases/tag/0.2.0
 [0.1.0]: https://github.com/koyeung/knockknock/releases/tag/0.1.0
