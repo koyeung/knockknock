@@ -36,9 +36,6 @@ PROCESS_TYPE_BG = 0x0
 # process type, dock
 PROCESS_TYPE_DOCK = 0x1
 
-# directory containing plugins
-PLUGIN_DIR = "plugins"
-
 #: typed namedtuple for major, minor version
 Version = NamedTuple("Version", [("major", int), ("minor", int)])
 
