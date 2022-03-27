@@ -6,15 +6,11 @@ to extract all registered cronjobs
 """
 __author__ = "patrick w"
 
-
 import glob
 import logging
 
-# plugin framework import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import command
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,17 +24,8 @@ CRON_JOBS_NAME = "Cron Jobs"
 CRON_JOBS_DESCRIPTION = "Jobs that are scheduled to run on specifed basis"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     def scan(self):
         """Scan action."""

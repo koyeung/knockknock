@@ -13,11 +13,8 @@ __author__ = "patrick w"
 import logging
 import os
 
-# plugin framework import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import command, utils
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,17 +28,8 @@ RC_SCRIPT_NAME = "RC Script"
 RC_SCRIPT_DESCRIPTION = "Commands founds within the rc* files"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     # invoked by core
     def scan(self):

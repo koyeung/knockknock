@@ -5,15 +5,11 @@ login items
 """
 __author__ = "patrick w"
 
-
 import logging
 import os
 
-# plugin framework import
-from yapsy.IPlugin import IPlugin
-
-# project imports
 from knockknock import file, utils
+from knockknock.plugin_base import KnockKnockPlugin
 
 LOGGER = logging.getLogger(__name__)
 
@@ -31,17 +27,8 @@ LOGIN_ITEM_NAME = "Login Items"
 LOGIN_ITEM_DESCRIPTION = "Binaries that are executed at login"
 
 
-class Scan(IPlugin):
+class Scan(KnockKnockPlugin):
     """Plugin class."""
-
-    @staticmethod
-    def init_results(name, description):
-        """Init results dictionary.
-
-        ->item name, description, and list
-        """
-        # results dictionary
-        return {"name": name, "description": description, "items": []}
 
     def scan(self):
         """Scan action."""
