@@ -11,6 +11,7 @@ __author__ = "patrick w"
 import glob
 import logging
 import os
+from typing import Dict
 
 from knockknock import file, utils
 from knockknock.plugin_base import KnockKnockPlugin
@@ -54,7 +55,7 @@ class Scan(KnockKnockPlugin):
     """Plugin class."""
 
     # overrides items
-    overridden_items = {}
+    overridden_items: Dict[str, bool] = {}
 
     def scan(self):
         """Scan action."""

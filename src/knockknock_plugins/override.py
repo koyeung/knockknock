@@ -214,7 +214,7 @@ class Scan(KnockKnockPlugin):
             marker_offset = bookmark_data_str.find(MARKER)
 
             # try to find start/end
-            if -1 != marker_offset:
+            if marker_offset != -1:
 
                 # scan backward to find ';'
                 login_item_start = bookmark_data_str[:marker_offset].rfind(";")
@@ -223,7 +223,7 @@ class Scan(KnockKnockPlugin):
                 login_item_end = bookmark_data_str[marker_offset:].find("\0")
 
             # extract logig item if start and end were found
-            if -1 != login_item_start and -1 != login_item_end:
+            if login_item_start != -1 and login_item_end != -1:
 
                 # extact item
                 # note: skip ';' at front (thus the +1)
