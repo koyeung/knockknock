@@ -569,10 +569,7 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
     """Find each parent's top parent (if its not launchd)."""
 
     # iterate over all processes
-    for pid in processes:
-
-        # get current process
-        process = processes[pid]
+    for process in processes.values():
 
         # default gpid
         process["gpid"] = -1
@@ -632,10 +629,7 @@ def set_process_type(processes: Mapping[int, ProcessInfo]):
     """
 
     # iterate over all processes
-    for pid in processes:
-
-        # get current process
-        process = processes[pid]
+    for process in processes.values():
 
         # get processes .app/ (bundle) directory
         app_directory = find_app_directory(process["path"])
