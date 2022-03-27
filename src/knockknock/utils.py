@@ -16,7 +16,7 @@ import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, cast, Iterator
+from typing import Union, Dict, Iterable, List, Mapping, NamedTuple, Optional, cast, Iterator
 
 import Foundation
 import Security
@@ -144,9 +144,15 @@ def _get_users() -> List[str]:
     return [result.recordName() for result in results]
 
 
-def load_plist(path: str):
+def load_plist(path: Union[str, Path]):
     """Load a plist from a file."""
-    return NSDictionary.dictionaryWithContentsOfFile_(path)
+    path_ = _ensure_path_object(path)
+
+    return NSDictionary.dictionaryWithContentsOfFile_(path_)
+
+
+def _ensure_path_object(path: Union[str, Path]):
+    return Path(path) if isinstance(path, str) else path
 
 
 def is_kext(path: str):

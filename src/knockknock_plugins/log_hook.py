@@ -7,6 +7,7 @@ __author__ = "patrick w"
 
 import logging
 import os
+from pathlib import Path
 
 from knockknock import command, file, utils
 from knockknock.plugin_base import KnockKnockPlugin
@@ -52,8 +53,7 @@ class Scan(KnockKnockPlugin):
         results.append(self.init_results(LOGOUT_HOOK_NAME, LOGOUT_HOOK_DESCRIPTION))
 
         # expand all login/out files
-        log_in_out_files = utils.expand_paths(
-            Path(path_str) for path_str in LOGIN_WINDOW_FILES)
+        log_in_out_files = utils.expand_paths(Path(file_) for file_ in LOGIN_WINDOW_FILES)
 
         # scan each file
         for log_in_out_file in log_in_out_files:
