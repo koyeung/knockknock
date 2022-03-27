@@ -19,6 +19,9 @@ LOGGER = logging.getLogger(__name__)
 #: minimum supported macOS version
 _MIN_OS_VERSION = (12, 0)
 
+#: minimum expected python version
+_MIN_PYTHON_VERSION = (3, 8)
+
 #: Categories of knockknock plugins
 _KK_PLUGINS_CATEGORY = "knockknock"
 
@@ -181,7 +184,7 @@ def _init_knockknock(args) -> None:
     # get python version
     python_version = sys.version_info
 
-    if (python_version.major, python_version.minor) < (3, 8):
+    if (python_version.major, python_version.minor) < _MIN_PYTHON_VERSION:
         raise RuntimeError(f"KnockKnock requires python 3.8+ (found: {python_version})")
 
     # check macOS version
