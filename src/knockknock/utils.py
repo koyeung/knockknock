@@ -86,7 +86,7 @@ def get_binary_from_bundle(bundle_path) -> Optional[str]:
     return str(binary_path) if binary_path else None
 
 
-def expand_paths(paths: Iterable[str]) -> List[str]:
+def expand_paths(paths: Iterable[Path]) -> List[Path]:
     """Expand leading '~' into all users' home or specified user home.
 
     ->returned paths are checked here to ensure they exist
@@ -94,28 +94,32 @@ def expand_paths(paths: Iterable[str]) -> List[str]:
     return list(itertools.chain.from_iterable(expand_path(path) for path in paths))
 
 
-def expand_path(path: str) -> List[str]:
+def expand_path(path: Path) -> List[Path]:
     """Expand leading '~' into all users' home or specified user home.
 
     ->returned paths are checked here to ensure they exist
     """
+    def path_exists(path_: Path) -> bool:
+        try:
+            return path_.exists()
+        except PermissionError:
+            return False
+
     return [
-        path_ for path_ in _expand_user(path) if os.path.exists(path_)
+        path_ for path_ in _expand_user(path) if path_exists(path_)
     ]
 
 
-def _expand_user(path: str) -> Iterator[str]:
+def _expand_user(path: Path) -> Iterator[Path]:
     """Expand leading '~' into all users' home or specified user home."""
-    as_path = Path(path)
-
-    path_parts = as_path.parts
+    path_parts = path.parts
 
     if path_parts[0] == '~':
         yield from (
-            str(Path(f"~{user}", *path_parts[1:]).expanduser()) for user in _get_users()
+            Path(f"~{user}", *path_parts[1:]).expanduser() for user in _get_users()
         )
     elif path_parts[0].startswith('~'):
-        yield str(as_path.expanduser())
+        yield path.expanduser()
     else:
         yield path
 
