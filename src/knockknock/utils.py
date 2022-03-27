@@ -5,6 +5,7 @@ __author__ = "patrick"
 # pylint: disable=no-name-in-module,no-member
 
 import functools
+import itertools
 import hashlib
 import importlib.util
 import logging
@@ -15,7 +16,7 @@ import plistlib
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, cast
+from typing import Dict, Iterable, List, Mapping, NamedTuple, Optional, cast, Iterator
 
 import Foundation
 import Security
@@ -86,42 +87,37 @@ def get_binary_from_bundle(bundle_path) -> Optional[str]:
 
 
 def expand_paths(paths: Iterable[str]) -> List[str]:
-    """Expand any '~'s into all users, given a list of paths.
+    """Expand leading '~' into all users' home or specified user home.
 
     ->returned paths are checked here to ensure they exist
     """
-    expanded_checked_paths = []
-
-    for path in paths:
-        expanded_checked_paths.extend(expand_path(path))
-
-    return expanded_checked_paths
+    return list(itertools.chain.from_iterable(expand_path(path) for path in paths))
 
 
 def expand_path(path: str) -> List[str]:
-    """Expand '~' into all users, given a path.
+    """Expand leading '~' into all users' home or specified user home.
 
     ->returned paths are checked here to ensure they exist
     """
+    return [
+        path_ for path_ in _expand_user(path) if os.path.exists(path_)
+    ]
 
-    def filter_exists(paths: Iterable[str]) -> List[str]:
-        # ignore non-existant directory
-        # ->'user' might be a system account (e.g. _spotlight),
-        # so won't have 'real' directories/files
-        return [path_ for path_ in paths if os.path.exists(path_)]
 
-    if path.startswith("~") and not path.startswith(f"~{os.sep}"):
-        # e.g. ~username/x/y/z
-        return filter_exists([os.path.expanduser(path)])
+def _expand_user(path: str) -> Iterator[str]:
+    """Expand leading '~' into all users' home or specified user home."""
+    as_path = Path(path)
 
-    if path == "~" or path.startswith(f"~{os.sep}"):
-        expanded = (
-            os.path.expanduser(path.replace("~", f"~{user}", 1))
-            for user in _get_users()
+    path_parts = as_path.parts
+
+    if path_parts[0] == '~':
+        yield from (
+            str(Path(f"~{user}", *path_parts[1:]).expanduser()) for user in _get_users()
         )
-        return filter_exists(expanded)
-
-    return filter_exists([path])
+    elif path_parts[0].startswith('~'):
+        yield str(as_path.expanduser())
+    else:
+        yield path
 
 
 @functools.lru_cache()
