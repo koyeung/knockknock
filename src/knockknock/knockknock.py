@@ -11,12 +11,15 @@ import sys
 
 from yapsy.PluginManager import PluginManager
 
-from . import file, output, utils, virustotal
+from . import file, output, plugin_base, utils, virustotal
 
 LOGGER = logging.getLogger(__name__)
 
 #: minimum supported macOS version
 _MIN_OS_VERSION = (12, 0)
+
+#: Categories of knockknock plugins
+_KK_PLUGINS_CATEGORY = "knockknock"
 
 
 def knocknock():
@@ -251,13 +254,15 @@ def _parse_args():
 # init plugin manager
 def _get_plugin_manager() -> PluginManager:
 
-    plugin_manager = PluginManager()
-    assert plugin_manager, "failed to create plugin manager"
-
-    # configure where plugins could be found
-    plugin_manager.getPluginLocator().setPluginPlaces(
-        [str(utils.get_plugins_directory())]
+    plugin_manager = PluginManager(
+        categories_filter={
+            _KK_PLUGINS_CATEGORY: plugin_base.KnockKnockPlugin,
+        },
+        directories_list=[
+            str(utils.get_plugins_directory()),
+        ],
     )
+    assert plugin_manager, "failed to create plugin manager"
 
     # get all plugins
     plugin_manager.collectPlugins()
@@ -270,7 +275,9 @@ def _list_plugins(plugin_manager) -> None:
     LOGGER.info("listing plugins")
 
     # iterate over all plugins
-    for plugin in sorted(plugin_manager.getAllPlugins(), key=lambda x: x.name):
+    for plugin in sorted(
+        plugin_manager.getPluginsOfCategory(_KK_PLUGINS_CATEGORY), key=lambda x: x.name
+    ):
 
         # dbg msg
         # ->always use print, since -v might not have been used
@@ -295,7 +302,7 @@ def _scan(*, plugin_name, plugin_manager):
         LOGGER.info("beginning scan using %s plugin", plugin_name)
 
     # iterate over all plugins
-    for plugin in plugin_manager.getAllPlugins():
+    for plugin in plugin_manager.getPluginsOfCategory(_KK_PLUGINS_CATEGORY):
 
         # results from plugin
         plugin_results = None
