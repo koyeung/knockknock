@@ -41,45 +41,30 @@ class Scan(KnockKnockPlugin):
         # ->open file and read each line
         for user_login_items in utils.expand_path(LOGIN_ITEM_FILE):
 
-            # wrap
-            try:
+            LOGGER.info("scanning %s", user_login_items)
 
-                LOGGER.info("scanning %s", user_login_items)
+            # load plist and check
+            plist_data = utils.load_plist(user_login_items)
 
-                # load plist and check
-                plist_data = utils.load_plist(user_login_items)
+            # extract sessions items
+            sesssion_items = plist_data["SessionItems"]
 
-                # extract sessions items
-                sesssion_items = plist_data["SessionItems"]
+            # extract custom list items
+            custom_list_items = sesssion_items["CustomListItems"]
 
-                # extract custom list items
-                custom_list_items = sesssion_items["CustomListItems"]
+            # iterate over all login items
+            for custom_list_item in custom_list_items:
 
-                # iterate over all login items
-                for custom_list_item in custom_list_items:
+                # extract alias data
+                alias_data = list((custom_list_item["Alias"]).bytes())
 
-                    # wrap it
-                    try:
+                # parse alias data
+                login_item = self.parse_alias_data(alias_data)
 
-                        # extact alias data
-                        alias_data = list((custom_list_item["Alias"]).bytes())
-
-                        # parse alias data
-                        login_item = self.parse_alias_data(alias_data)
-
-                        # save extracted login item
-                        if login_item:
-
-                            # save
-                            results["items"].append(file.File(login_item))
-
-                    # ignore exceptions
-                    except Exception:  # pylint: disable=broad-except
-                        LOGGER.exception(f"{custom_list_item=}")
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{user_login_items=}")
+                # save extracted login item
+                if login_item:
+                    # save
+                    results["items"].append(file.File(login_item))
 
         return results
 
@@ -110,18 +95,8 @@ class Scan(KnockKnockPlugin):
             # extract possible file
             file_ = "/" + "".join(alias_data[i + 1 : i + 1 + size])
 
-            # wrap
-            try:
-
-                # check if it exists
-                if not os.path.exists(file_):
-
-                    # skip
-                    continue
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{file_=}")
+            # check if it exists
+            if not os.path.exists(file_):
                 # skip
                 continue
 

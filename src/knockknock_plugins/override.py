@@ -56,7 +56,6 @@ class Scan(KnockKnockPlugin):
 
         # get all overrides plists
         for override_directory in OVERRIDES_DIRECTORIES:
-
             # get all
             overrides.extend(glob.glob(override_directory + "*/overrides.plist"))
 
@@ -64,124 +63,81 @@ class Scan(KnockKnockPlugin):
         # ->check all files for overrides
         for override in overrides:  # pylint: disable=too-many-nested-blocks
 
-            # wrap
-            try:
+            # load plist and check
+            plist_data = utils.load_plist(override)
 
-                # load plist and check
-                plist_data = utils.load_plist(override)
+            # skip any plist files that couldn't be loaded
+            if not plist_data:
+                continue
 
-                # skip any plist files that couldn't be loaded
-                if not plist_data:
+            sandboxed_login_items_bookmarks = None
 
-                    # skip
+            # extract sandboxed login items
+            # ->helper apps
+            if "_com.apple.SMLoginItemBookmarks" in plist_data:
+
+                # sandbox login items
+                #
+                # extract all
+                # ->'_com.apple.SMLoginItemBookmarks' is key
+                sandboxed_login_items_bookmarks = plist_data[
+                    "_com.apple.SMLoginItemBookmarks"
+                ]
+
+                # iterate over all
+                # ->extract from bookmark blob
+                for sandboxed_login_item in sandboxed_login_items_bookmarks:
+
+                    # print 'sandboxed item from SMLoginItemBookmarks: %s'
+                    # % sandboxedLoginItem
+
+                    # print self.parseBookmark(
+                    # sandboxedLoginItemsBookmarks[sandboxedLoginItem])
+
+                    # ignore disabled ones
+                    if not self.is_override_enabled(plist_data, sandboxed_login_item):
+                        # dbg msg
+                        # print '%s is disabled!!' % sandboxedLoginItem
+                        continue
+
+                    # parse bookmark blob
+                    # ->attempt to extract login item
+                    login_item = self.parse_bookmark(
+                        sandboxed_login_items_bookmarks[sandboxed_login_item]
+                    )
+
+                    # ignore files that don't exist
+                    # ->some apps that don't cleanly uninstall leave entries here
+                    if not os.path.exists(login_item):
+                        continue
+
+                    # save extracted login item
+                    if login_item:
+                        # save
+                        results["items"].append(file.File(login_item))
+
+            # now parse 'normal' overrides
+            for override_item in plist_data:
+
+                # skip the overrides that are also in the bookmark dictionary
+                # ->these were already processed (above)
+                if (
+                    sandboxed_login_items_bookmarks
+                    and override_item in sandboxed_login_items_bookmarks
+                ):
                     continue
 
-                sandboxed_login_items_bookmarks = None
+                # ignore disabled ones
+                if not self.is_override_enabled(plist_data, override_item):
+                    continue
 
-                # extract sandboxed login items
-                # ->helper apps
-                if "_com.apple.SMLoginItemBookmarks" in plist_data:
-
-                    # sandbox login items
-                    #
-                    # extract all
-                    # ->'_com.apple.SMLoginItemBookmarks' is key
-                    sandboxed_login_items_bookmarks = plist_data[
-                        "_com.apple.SMLoginItemBookmarks"
-                    ]
-
-                    # iterate over all
-                    # ->extract from bookmark blob
-                    for sandboxed_login_item in sandboxed_login_items_bookmarks:
-
-                        # wrap
-                        # ->here, allows just single item to be skipped
-                        try:
-
-                            # print 'sandboxed item from SMLoginItemBookmarks: %s'
-                            # % sandboxedLoginItem
-
-                            # print self.parseBookmark(
-                            # sandboxedLoginItemsBookmarks[sandboxedLoginItem])
-
-                            # ignore disabled ones
-                            if not self.is_override_enabled(
-                                plist_data, sandboxed_login_item
-                            ):
-
-                                # dbg msg
-                                # print '%s is disabled!!' % sandboxedLoginItem
-
-                                # skip
-                                continue
-
-                            # parse bookmark blob
-                            # ->attempt to extract login item
-                            login_item = self.parse_bookmark(
-                                sandboxed_login_items_bookmarks[sandboxed_login_item]
-                            )
-
-                            # ignore files that don't exist
-                            # ->some apps that don't cleanly uninstall leave entries here
-                            if not os.path.exists(login_item):
-
-                                # skip
-                                continue
-
-                            # save extracted login item
-                            if login_item:
-
-                                # save
-                                results["items"].append(file.File(login_item))
-
-                        # ignore exceptions
-                        # ->just try next time
-                        except Exception:  # pylint: disable=broad-except
-                            LOGGER.exception(f"{sandboxed_login_item=}")
-                            # skip
-                            continue
-
-                # now parse 'normal' overrides
-                for override_item in plist_data:
-
-                    # wrap
-                    # ->here, allows just single item to be skipped
-                    try:
-
-                        # skip the overrides that are also in the bookmark dictionary
-                        # ->these were already processed (above)
-                        if (
-                            sandboxed_login_items_bookmarks
-                            and override_item in sandboxed_login_items_bookmarks
-                        ):
-
-                            # skip
-                            continue
-
-                        # ignore disabled ones
-                        if not self.is_override_enabled(plist_data, override_item):
-
-                            # skip
-                            continue
-
-                        # here, just got a bundle ID
-                        # ->try to get the binary for it by searching launch daemon and agents
-                        binary_for_overide = self.find_binary_for_overide(override_item)
-
-                        # save binaries
-                        if binary_for_overide:
-
-                            # save
-                            results["items"].append(file.File(binary_for_overide))
-
-                    # ignore exceptions
-                    # ->just try next time
-                    except Exception:  # pylint: disable=broad-except
-                        LOGGER.exception(f"{override_item=}")
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{override=}")
+                # here, just got a bundle ID
+                # ->try to get the binary for it by searching launch daemon and agents
+                binary_for_overide = self.find_binary_for_overide(override_item)
+                # save binaries
+                if binary_for_overide:
+                    # save
+                    results["items"].append(file.File(binary_for_overide))
 
         return results
 
@@ -206,52 +162,35 @@ class Scan(KnockKnockPlugin):
         # end of login item
         login_item_end = -1
 
-        # wrap
-        try:
+        # scan thru binary data
+        # look for marker ('/contents/library/loginitems/')
+        marker_offset = bookmark_data_str.find(MARKER)
 
-            # scan thru binary data
-            # look for marker ('/contents/library/loginitems/')
-            marker_offset = bookmark_data_str.find(MARKER)
+        # try to find start/end
+        if marker_offset != -1:
 
-            # try to find start/end
-            if marker_offset != -1:
+            # scan backward to find ';'
+            login_item_start = bookmark_data_str[:marker_offset].rfind(";")
 
-                # scan backward to find ';'
-                login_item_start = bookmark_data_str[:marker_offset].rfind(";")
+            # scan foward to find NULL
+            login_item_end = bookmark_data_str[marker_offset:].find("\0")
 
-                # scan foward to find NULL
-                login_item_end = bookmark_data_str[marker_offset:].find("\0")
+        # extract logig item if start and end were found
+        if login_item_start != -1 and login_item_end != -1:
 
-            # extract logig item if start and end were found
-            if login_item_start != -1 and login_item_end != -1:
-
-                # extact item
-                # note: skip ';' at front (thus the +1)
-                login_item = bookmark_data_str[
-                    login_item_start + 1 : marker_offset + login_item_end
-                ]
-
-        # ignore exceptions
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception(f"{bookmark_data=}")
+            # extact item
+            # note: skip ';' at front (thus the +1)
+            login_item = bookmark_data_str[
+                login_item_start + 1 : marker_offset + login_item_end
+            ]
 
         return login_item
 
     @staticmethod
     def is_override_enabled(plist, override_key):
         """Determines in a override is enabled."""
-        # enabled flag
-        enabled = False
-
-        # wrap
-        try:
-
-            # enable is the opposite of disabled
-            enabled = not plist[override_key]["Disabled"]
-
-        # ignore exception
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception(f"{plist=} {override_key=}")
+        # enable is the opposite of disabled
+        enabled = not plist[override_key]["Disabled"]
 
         return enabled
 
@@ -265,57 +204,42 @@ class Scan(KnockKnockPlugin):
         # the binary
         binary = None
 
-        # wrap
-        try:
+        # expand launch daemons and agents directories
+        directories = utils.expand_paths(LAUNCH_D_AND_A_DIRECTORIES)
 
-            # expand launch daemons and agents directories
-            directories = utils.expand_paths(LAUNCH_D_AND_A_DIRECTORIES)
+        # attempt to find bundle ID in any of the directories
+        for directory in directories:
 
-            # attempt to find bundle ID in any of the directories
-            for directory in directories:
+            # init candidate plist path
+            plist_path = directory + bundle_id + ".plist"
 
-                # init candidate plist path
-                plist_path = directory + bundle_id + ".plist"
+            # check if there if candidate plist exists
+            if not os.path.exists(plist_path):
+                continue
 
-                # check if there if candidate plist exists
-                if not os.path.exists(plist_path):
+            # load plist
+            plist_data = utils.load_plist(plist_path)
 
-                    # skip
-                    continue
+            # check if 'ProgramArguments' exists
+            if "ProgramArguments" in plist_data:
 
-                # load plist
-                plist_data = utils.load_plist(plist_path)
+                # extract program arguments
+                program_arguments = plist_data["ProgramArguments"]
 
-                # check if 'ProgramArguments' exists
-                if "ProgramArguments" in plist_data:
+                # check if its a file
+                if os.path.isfile(program_arguments[0]):
+                    # happy, got binary for bundle id
+                    binary = program_arguments[0]
+                    break
 
-                    # extract program arguments
-                    program_arguments = plist_data["ProgramArguments"]
+            # check if 'Program' key contains binary
+            # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
+            elif "Program" in plist_data:
 
-                    # check if its a file
-                    if os.path.isfile(program_arguments[0]):
-
-                        # happy, got binary for bundle id
-                        binary = program_arguments[0]
-
-                        # bail
-                        break
-
-                # check if 'Program' key contains binary
-                # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
-                elif "Program" in plist_data:
-
-                    # check if its a file
-                    if os.path.isfile(plist_data["Program"]):
-
-                        # happy, got binary for bundle id
-                        binary = plist_data["Program"]
-
-                        # bail
-                        break
-
-        # ignore exceptions
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception(f"{bundle_id=}")
+                # check if its a file
+                if os.path.isfile(plist_data["Program"]):
+                    # happy, got binary for bundle id
+                    binary = plist_data["Program"]
+                    break
 
         return binary
