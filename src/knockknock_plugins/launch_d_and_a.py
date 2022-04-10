@@ -136,81 +136,56 @@ class Scan(KnockKnockPlugin):
         # ->check 'RunAtLoad' (for true) and then extract the first item in the 'ProgramArguments'
         for plist in plists:
 
-            # wrap
-            try:
+            # load plist
+            plist_data = utils.load_plist(plist)
+            # skip files that couldn't be loaded
+            if not plist_data:
+                continue
 
-                # program args from plist
-                program_arguments = []
+            # skip non-autorun'd items
+            if not self.is_auto_run(plist_data):
+                continue
 
-                # load plist
-                plist_data = utils.load_plist(plist)
+            # check for 'ProgramArguments' key
+            if "ProgramArguments" in plist_data:
 
-                # skip files that couldn't be loaded
-                if not plist_data:
+                # extract program arguments
+                program_arguments = plist_data["ProgramArguments"]
 
-                    # skip
+                # skip funky args
+                if len(program_arguments) < 1:
                     continue
 
-                # skip non-autorun'd items
-                if not self.is_auto_run(plist_data):
+                # extract launch item's binary
+                # ->should be first item in args array
+                binary = program_arguments[0]
+                # skip files that aren't found
+                # ->will try 'which' to resolve things like 'bash', etc
+                if not os.path.isfile(binary):
 
-                    # skip
-                    continue
-
-                # check for 'ProgramArguments' key
-                if "ProgramArguments" in plist_data:
-
-                    # extract program arguments
-                    program_arguments = plist_data["ProgramArguments"]
-
-                    # skip funky args
-                    if len(program_arguments) < 1:
-
-                        # skip
+                    # try which
+                    binary = utils.which(binary)
+                    if not binary:
                         continue
 
-                    # extract launch item's binary
-                    # ->should be first item in args array
-                    binary = program_arguments[0]
+            # also check for 'Program' key
+            # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
+            elif "Program" in plist_data:
 
-                    # skip files that aren't found
-                    # ->will try 'which' to resolve things like 'bash', etc
-                    if not os.path.isfile(binary):
+                # extract binary
+                binary = plist_data["Program"]
+                # skip files that aren't found
+                # ->will try 'which' to resolve things like 'bash', etc
+                if not os.path.isfile(binary):
+                    # try which
+                    binary = utils.which(binary)
+                    if not binary:
+                        continue
 
-                        # try which
-                        binary = utils.which(binary)
-                        if not binary:
-
-                            # skip
-                            continue
-
-                # also check for 'Program' key
-                # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
-                elif "Program" in plist_data:
-
-                    # extract binary
-                    binary = plist_data["Program"]
-
-                    # skip files that aren't found
-                    # ->will try 'which' to resolve things like 'bash', etc
-                    if not os.path.isfile(binary):
-
-                        # try which
-                        binary = utils.which(binary)
-                        if not binary:
-
-                            # skip
-                            continue
-
-                # save extracted launch daemon/agent binary
-                if binary:
-
-                    # save
-                    auto_run_bins.append([binary, plist])
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{plist=}")
+            # save extracted launch daemon/agent binary
+            if binary:
+                # save
+                auto_run_bins.append([binary, plist])
 
         return auto_run_bins
 
@@ -304,29 +279,19 @@ class Scan(KnockKnockPlugin):
         # ->check all files for overrides
         for overide in overrides:
 
-            # wrap
-            try:
+            LOGGER.info("opening %s", overide)
 
-                LOGGER.info("opening %s", overide)
+            # load plist and check
+            plist_data = utils.load_plist(overide)
+            if not plist_data:
+                continue
 
-                # load plist and check
-                plist_data = utils.load_plist(overide)
-                if not plist_data:
+            # now parse 'normal' overrides
+            for override_item in plist_data:
 
-                    # skip
-                    continue
-
-                # now parse 'normal' overrides
-                for override_item in plist_data:
-
-                    # check if item has disabled flag (true/false)
-                    if "Disabled" in plist_data[override_item]:
-
-                        # save
-                        self.overridden_items[override_item] = plist_data[
-                            override_item
-                        ]["Disabled"]
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{overide=}")
+                # check if item has disabled flag (true/false)
+                if "Disabled" in plist_data[override_item]:
+                    # save
+                    self.overridden_items[override_item] = plist_data[override_item][
+                        "Disabled"
+                    ]

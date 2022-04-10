@@ -26,7 +26,11 @@ __author__ = "patrick w"
 # /Support/lsregister -v -f /Applications/ApplicationName.app
 
 import glob
+import itertools
 import logging
+from collections import namedtuple
+from pathlib import Path
+from typing import Iterable, List, Optional
 
 from knockknock import file, utils
 from knockknock.plugin_base import KnockKnockPlugin
@@ -56,15 +60,14 @@ INSERTED_DYNAMIC_LIBRARIES_DESCRIPTION = (
     "Dynamic Libraries that are set to be injected via DYLD_INSERT_LIBRARIES"
 )
 
+PListFile = namedtuple("PListFile", ["path", "plist"])
+
 
 class Scan(KnockKnockPlugin):
     """Plugin class."""
 
     def scan(self):
         """Scan action."""
-        # results
-        results = []
-
         LOGGER.info("running scan")
 
         # init results
@@ -75,164 +78,126 @@ class Scan(KnockKnockPlugin):
         # scan launch items for inserted dylibs
         launch_items = _scan_launch_items(LAUNCH_ITEMS_DIRECTORIES)
         if launch_items:
-
-            # save
             results["items"].extend(launch_items)
 
         # scan all installed applications for inserted dylibs
         applications = _scan_applications()
         if applications:
-
-            # save
             results["items"].extend(applications)
 
         return results
 
 
-def _scan_launch_items(directories):
+def _scan_launch_items(directories) -> Optional[List[file.File]]:
     """Scan launch agents or daemons.
 
     for each directory, load all plist's and look for 'DYLD_INSERT_LIBRARIES' key
     within a 'EnvironmentVariables'
     """
-    # launch items
-    launch_items = []
-
     # expand directories
     # ->ensures '~'s are expanded to all user's
     directories = utils.expand_paths(directories)
 
+    launch_item_plist_paths: List[str] = []
+
     # get all files (plists) in launch daemon/agent directories
     for directory in directories:
-
         LOGGER.info("scanning %s", directory)
 
         # get launch daemon/agent plist
-        launch_items.extend(glob.glob(directory + "*"))
+        assert directory.endswith("/"), "should be endswith '/'"
+        launch_item_plist_paths.extend(glob.glob(directory + "*"))
+
+    launch_item_plists = [
+        PListFile(plist_path, utils.load_plist(plist_path))
+        for plist_path in launch_item_plist_paths
+    ]
 
     # check all plists for DYLD_INSERT_LIBRARIES
     # ->for each found, creates file object
-    return _scan_plists(launch_items, LAUNCH_ITEM_DYLD_KEY)
+    return _scan_plist_files(launch_item_plists, env_key=LAUNCH_ITEM_DYLD_KEY)
 
 
-def _scan_applications():
+def _scan_applications() -> Optional[List[file.File]]:
     """Scan all installed applications.
 
     for each directory, load all apps' Info.plist and look for 'DYLD_INSERT_LIBRARIES' key
     within a 'LSEnvironment'
     """
-    # app plists
-    app_plists = []
-
     LOGGER.info("generating list of all installed apps (this may take some time)")
 
-    # get all installed apps
     installed_apps = utils.get_installed_apps()
 
-    # sanity check
-    # ->using system_profiler (to get installed apps) can timeout/throw exception, etc
     if not installed_apps:
-
-        # bail
+        # in case system_profiler (to get installed apps) can timeout/throw exception, etc
         return None
 
-    # now, get Info.plist for each app
+    info_plists = []
+
     for app in installed_apps:
 
-        # skip apps that don't have a path
-        if not "path" in app:
+        app_name = app["_name"]
 
-            # skip
+        if "path" not in app:
+            LOGGER.warning(f"path not found in {app_name}")
             continue
 
-        # get/load app's Info.plist
         plist = utils.load_info_plist(app["path"])
+        assert (
+            "CFBundleInfoPlistURL" not in plist
+        ), "ensure CFBundleInfoPlistURL not in plist and use Contents/Info.plist instead"
 
-        # skip apps that don't have Info.plist
-        if not plist:
-
-            # skip
+        plist_path_obj = Path(f"{app['path']}") / "Contents" / "Info.plist"
+        if plist_path_obj.exists():
+            plist_path = str(plist_path_obj)
+        else:
+            LOGGER.warning(f"{plist_path_obj} not exists; skip {app_name}")
             continue
 
-        # save plist for processing
-        app_plists.append(plist)
+        info_plists.append(PListFile(plist_path, plist))
 
     # check all plists for DYLD_INSERT_LIBRARIES
     # ->for each found, creates file object
-    return _scan_plists(app_plists, APPLICATION_DYLD_KEY, is_loaded=True)
+    return _scan_plist_files(info_plists, env_key=APPLICATION_DYLD_KEY)
 
 
-def _scan_plists(plists, key, is_loaded=False):
+def _scan_plist_files(
+    plist_files: Iterable[PListFile], /, *, env_key: str
+) -> List[file.File]:
     """Scan a list of plist.
 
-    ->check for 'DYLD_INSERT_LIBRARIES' in plist, and if found, create file obj/result
+    -> create file obj if interested *DYLD_INSERT_LIBRARIES found
     """
-    # results
-    results = []
+    return list(
+        itertools.chain.from_iterable(
+            _scan_plist_file(plist_file, env_key=env_key) for plist_file in plist_files
+        )
+    )
 
-    # sanity check
-    if not plists:
 
-        # bail
-        return None
+def _scan_plist_file(plist_file: PListFile, /, *, env_key: str) -> List[file.File]:
 
-    # iterate over all plist
-    # ->check for 'DYLD_INSERT_LIBRARIES' enviroment variable
-    for plist in plists:
+    results: List[file.File] = []
 
-        # wrap
-        try:
+    # check for env key
+    # -> will be either 'EnvironmentVariables' or 'LSEnvironment'
+    # depends on if launch item or app
+    if env_key in plist_file.plist:
 
-            # load contents of plist if needed
-            if not is_loaded:
+        env_plist = plist_file.plist[env_key]
 
-                # save path
-                plist_path = plist
+        # check for/save DYLD_INSERT_LIBRARIES
+        if "DYLD_INSERT_LIBRARIES" in env_plist:
+            # create file obj and append to results
+            results.append(
+                file.File(env_plist["DYLD_INSERT_LIBRARIES"], plist_file.path)
+            )
 
-                # load it and check
-                loaded_plist = utils.load_plist(plist)
-                if not loaded_plist:
-
-                    # skip
-                    continue
-
-            # otherwise it's already loaded
-            # ->use as is
-            else:
-
-                # set
-                loaded_plist = plist
-
-                # get path
-                plist_path = utils.get_path_from_plist(loaded_plist)
-
-            # check for env key
-            # -> will be either 'EnvironmentVariables' or 'LSEnvironment'
-            # depending if launch item or app
-            if key in loaded_plist:
-
-                # check for/save DYLD_INSERT_LIBRARIES
-                if "DYLD_INSERT_LIBRARIES" in loaded_plist[key]:
-
-                    # create file obj and append to results
-                    results.append(
-                        file.File(
-                            loaded_plist[key]["DYLD_INSERT_LIBRARIES"], plist_path
-                        )
-                    )
-
-                # check for/save __XPC_DYLD_INSERT_LIBRARIES
-                if "__XPC_DYLD_INSERT_LIBRARIES" in loaded_plist[key]:
-
-                    # create file obj and append to results
-                    results.append(
-                        file.File(
-                            loaded_plist[key]["__XPC_DYLD_INSERT_LIBRARIES"], plist_path
-                        )
-                    )
-
-        # ignore exceptions
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception(f"{plist=}")
+        # check for/save __XPC_DYLD_INSERT_LIBRARIES
+        if "__XPC_DYLD_INSERT_LIBRARIES" in env_plist:
+            # create file obj and append to results
+            results.append(
+                file.File(env_plist["__XPC_DYLD_INSERT_LIBRARIES"], plist_file.path)
+            )
 
     return results

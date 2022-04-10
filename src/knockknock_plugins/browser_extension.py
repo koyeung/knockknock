@@ -117,39 +117,24 @@ class Scan(KnockKnockPlugin):
     @staticmethod
     def get_installed_browsers():
         """Get list of installed browsers."""
-        # wrap
-        try:
+        # list of installed browsers
+        installed_browsers = []
 
-            # list of installed browsers
-            installed_browsers = []
+        # get list of app IDs that can handle 'https'
+        # ->i.e. browsers
+        browsers_ids = CoreServices.LSCopyAllHandlersForURLScheme("https")
 
-            # get list of app IDs that can handle 'https'
-            # ->i.e. browsers
-            browsers_ids = CoreServices.LSCopyAllHandlersForURLScheme("https")
+        # app IDs to full paths to the apps
+        for browser_id in browsers_ids:
 
-            # app IDs to full paths to the apps
-            for browser_id in browsers_ids:
+            # use LSFindApplicationForInfo to convert ID to app path
+            # returns a list, 3rd item an NSURL to the browser
+            browser_url = CoreServices.LSFindApplicationForInfo(
+                CoreServices.kLSUnknownCreator, browser_id, None, None, None
+            )[2]
 
-                # wrap
-                try:
-
-                    # use LSFindApplicationForInfo to convert ID to app path
-                    # returns a list, 3rd item an NSURL to the browser
-                    browser_url = CoreServices.LSFindApplicationForInfo(
-                        CoreServices.kLSUnknownCreator, browser_id, None, None, None
-                    )[2]
-
-                    # convert the url to a filepath
-                    installed_browsers.append(browser_url.path())
-
-                # ignore exceptions
-                # ->just want to try next browser
-                except Exception:  # pylint: disable=broad-except
-                    LOGGER.exception(f"get_installed_browsers {browser_id=}")
-
-        # ignore exceptions
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception("get_installed_browsers")
+            # convert the url to a filepath
+            installed_browsers.append(browser_url.path())
 
         return installed_browsers
 
@@ -169,61 +154,41 @@ class Scan(KnockKnockPlugin):
         # parse each for extensions
         for safari_extension_file in safari_extension_files:
 
-            # wrap
-            try:
+            # load extension file
+            plist_data = utils.load_plist(safari_extension_file)
 
-                # load extension file
-                plist_data = utils.load_plist(safari_extension_file)
+            # ensure data looks ok
+            if not plist_data or "Installed Extensions" not in plist_data:
+                continue
 
-                # ensure data looks ok
-                if not plist_data or "Installed Extensions" not in plist_data:
+            # the list of extensions are stored in the 'settings' key
+            extensions = plist_data["Installed Extensions"]
+            # scan all extensions
+            # ->skip ones that are disabled, white listed, etc
+            for current_extension in extensions:
 
-                    # skip/try next
+                # skip disabled plugins
+                if "Enabled" in current_extension and not current_extension["Enabled"]:
                     continue
 
-                # the list of extensions are stored in the 'settings' key
-                extensions = plist_data["Installed Extensions"]
+                # dictionary for extension info
+                extension_info = {}
+                # extract path
+                if "Archive File Name" in current_extension:
+                    # name
+                    extension_info["path"] = (
+                        safari_extension_file
+                        + "/"
+                        + current_extension["Archive File Name"]
+                    )
 
-                # scan all extensions
-                # ->skip ones that are disabled, white listed, etc
-                for current_extension in extensions:
+                # extract name
+                if "Bundle Directory Name" in current_extension:
+                    # path
+                    extension_info["name"] = current_extension["Bundle Directory Name"]
 
-                    # dictionary for extension info
-                    extension_info = {}
-
-                    # skip disabled plugins
-                    if (
-                        "Enabled" in current_extension
-                        and not current_extension["Enabled"]
-                    ):
-
-                        # skip
-                        continue
-
-                    # extract path
-                    if "Archive File Name" in current_extension:
-
-                        # name
-                        extension_info["path"] = (
-                            safari_extension_file
-                            + "/"
-                            + current_extension["Archive File Name"]
-                        )
-
-                    # extract name
-                    if "Bundle Directory Name" in current_extension:
-
-                        # path
-                        extension_info["name"] = current_extension[
-                            "Bundle Directory Name"
-                        ]
-
-                    # create and append
-                    results.append(extension.Extension(extension_info))
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{safari_extension_file=}")
+                # create and append
+                results.append(extension.Extension(extension_info))
 
         return results
 
@@ -243,61 +208,52 @@ class Scan(KnockKnockPlugin):
         # parse each for extensions
         for chrome_preference_file in chrome_preferences:
 
-            # wrap
-            try:
+            # open preference file and load it
+            with open(chrome_preference_file, "r", encoding="utf-8") as file:
 
-                # open preference file and load it
-                with open(chrome_preference_file, "r", encoding="utf-8") as file:
+                # load as JSON
+                preferences = json.loads(file.read())
+                if not preferences:
+                    continue
 
-                    # load as JSON
-                    preferences = json.loads(file.read())
-                    if not preferences:
+            # pref file just has the list of ids,
+            # everything else we might want is in
+            # os.path.dirname(chromePreferenceFile)
+            # + '/Extensions/' + id + version + manifest.json
+            # manifest has name, description
 
-                        # skip/try next
-                        continue
+            extensions = preferences["extensions"]["install_signature"]["ids"]
 
-                # pref file just has the list of ids,
-                # everything else we might want is in
-                # os.path.dirname(chromePreferenceFile)
-                # + '/Extensions/' + id + version + manifest.json
-                # manifest has name, description
+            # scan all extensions
+            # ->skip ones that are disabled, white listed, etc
+            for extension_key in sorted(extensions):
 
-                extensions = preferences["extensions"]["install_signature"]["ids"]
+                # dictionary for extension info
+                extension_info = {}
 
-                # scan all extensions
-                # ->skip ones that are disabled, white listed, etc
-                for extension_key in extensions:
+                # save key
+                extension_info["id"] = extension_key
+                extension_path = (
+                    os.path.dirname(chrome_preference_file)
+                    + "/Extensions/"
+                    + extension_info["id"]
+                )
 
-                    # dictionary for extension info
-                    extension_info = {}
+                extdir = os.listdir(extension_path)
+                for verdir in extdir:
+                    manpath = extension_path + "/" + verdir + "/manifest.json"
 
-                    # save key
-                    extension_info["id"] = extension_key
-                    extension_path = (
-                        os.path.dirname(chrome_preference_file)
-                        + "/Extensions/"
-                        + extension_info["id"]
-                    )
+                    with open(manpath, "r", encoding="utf-8") as file:
+                        manifest = json.loads(file.read())
+                        if not manifest:
+                            continue
 
-                    extdir = os.listdir(extension_path)
-                    for verdir in extdir:
-                        manpath = extension_path + "/" + verdir + "/manifest.json"
+                    extension_info["path"] = manpath
+                    extension_info["name"] = manifest["name"]
+                    extension_info["description"] = manifest["description"]
 
-                        with open(manpath, "r", encoding="utf-8") as file:
-                            manifest = json.loads(file.read())
-                            if not manifest:
-                                continue
-
-                        extension_info["path"] = manpath
-                        extension_info["name"] = manifest["name"]
-                        extension_info["description"] = manifest["description"]
-
-                        # create and append
-                        results.append(extension.Extension(extension_info))
-
-            # ignore exceptions
-            except Exception:  # pylint: disable=broad-except
-                LOGGER.exception(f"{chrome_preference_file=}")
+                    # create and append
+                    results.append(extension.Extension(extension_info))
 
         return results
 
@@ -337,25 +293,12 @@ class Scan(KnockKnockPlugin):
             # ->contains list of addons (extensions)
             for firefox_extension_file in firefox_extension_files:
 
-                # wrap
-                try:
-
-                    # open extension file and load it
-                    with open(firefox_extension_file, "r", encoding="utf-8") as file:
-
-                        # load as JSON
-                        addons = json.loads(file.read())["addons"]
-                        if not addons:
-
-                            # skip/try next
-                            continue
-
-                # ignore exceptions
-                except Exception:  # pylint: disable=broad-except
-                    LOGGER.exception(f"{firefox_extension_file=}")
-
-                    # skip/try next
-                    continue
+                # open extension file and load it
+                with open(firefox_extension_file, "r", encoding="utf-8") as file:
+                    # load as JSON
+                    addons = json.loads(file.read())["addons"]
+                    if not addons:
+                        continue
 
                 # extract all addons/extensions
                 # ->in both addons and extensions json files, called addons :/
@@ -364,106 +307,88 @@ class Scan(KnockKnockPlugin):
                     # dictionary for addon/extension info
                     extension_info = {}
 
-                    # wrap
-                    try:
+                    # extract id
+                    if "id" in addon:
+                        # save
+                        extension_info["id"] = addon["id"]
 
-                        # extract id
-                        if "id" in addon:
+                    # skip duplicates
+                    # ->extensions can show up in addons.json and extensions.json
+                    if addon["id"] in extension_ids:
+                        continue
 
+                    # json in addons.json file is formatted one way
+                    if "addons.json" == os.path.split(firefox_extension_file)[1]:
+
+                        # extract name
+                        if "name" in addon:
                             # save
-                            extension_info["id"] = addon["id"]
+                            extension_info["name"] = addon["name"]
 
-                        # skip duplicates
-                        # ->extensions can show up in addons.json and extensions.json
-                        if addon["id"] in extension_ids:
+                        # extract description
+                        if "description" in addon:
+                            # save
+                            extension_info["description"] = addon[
+                                "description"
+                            ].replace("\n", " ")
 
-                            # skip dupe
+                        # build path
+                        # ->should be in the extensions/ folder, under <id>.XPI
+                        path = (
+                            os.path.split(firefox_extension_file)[0]
+                            + "/extensions/"
+                            + addon["id"]
+                            + ".xpi"
+                        )
+
+                        # ignore .xpi's that don't exist
+                        if not os.path.exists(path):
                             continue
 
-                        # json in addons.json file is formatted one way
-                        if "addons.json" == os.path.split(firefox_extension_file)[1]:
+                        # save path
+                        extension_info["path"] = path
 
-                            # extract name
-                            if "name" in addon:
+                    # json in extensions.json file is formatted another way
+                    else:
 
-                                # save
-                                extension_info["name"] = addon["name"]
+                        # extract name
+                        if (
+                            "defaultLocale" in addon
+                            and "name" in addon["defaultLocale"]
+                        ):
+                            # save
+                            extension_info["name"] = addon["defaultLocale"]["name"]
 
-                            # extract description
-                            if "description" in addon:
+                        # extract description
+                        if (
+                            "defaultLocale" in addon
+                            and "description" in addon["defaultLocale"]
+                        ):
+                            # save
+                            extension_info["description"] = addon["defaultLocale"][
+                                "description"
+                            ]
 
-                                # save
-                                extension_info["description"] = addon[
-                                    "description"
-                                ].replace("\n", " ")
+                        # build path
+                        # ->should be a directory in the extensions/ folder, under <id>
+                        path = (
+                            os.path.split(firefox_extension_file)[0]
+                            + "/extensions/"
+                            + addon["id"]
+                        )
 
-                            # build path
-                            # ->should be in the extensions/ folder, under <id>.XPI
-                            path = (
-                                os.path.split(firefox_extension_file)[0]
-                                + "/extensions/"
-                                + addon["id"]
-                                + ".xpi"
-                            )
+                        # ignore those that don't exist
+                        if not os.path.exists(path):
+                            continue
 
-                            # ignore .xpi's that don't exist
-                            if not os.path.exists(path):
+                        # save path
+                        extension_info["path"] = path
 
-                                # skip
-                                continue
+                    # save extension id
+                    # ->used to prevent dupes
+                    extension_ids.append(extension_info["id"])
 
-                            # save path
-                            extension_info["path"] = path
-
-                        # json in extensions.json file is formatted another way
-                        else:
-
-                            # extract name
-                            if (
-                                "defaultLocale" in addon
-                                and "name" in addon["defaultLocale"]
-                            ):
-
-                                # save
-                                extension_info["name"] = addon["defaultLocale"]["name"]
-
-                            # extract description
-                            if (
-                                "defaultLocale" in addon
-                                and "description" in addon["defaultLocale"]
-                            ):
-
-                                # save
-                                extension_info["description"] = addon["defaultLocale"][
-                                    "description"
-                                ]
-
-                            # build path
-                            # ->should be a directory in the extensions/ folder, under <id>
-                            path = (
-                                os.path.split(firefox_extension_file)[0]
-                                + "/extensions/"
-                                + addon["id"]
-                            )
-
-                            # ignore those that don't exist
-                            if not os.path.exists(path):
-
-                                # skip
-                                continue
-
-                            # save path
-                            extension_info["path"] = path
-
-                        # save extension id
-                        # ->used to prevent dupes
-                        extension_ids.append(extension_info["id"])
-
-                        # create and append addon (extension)
-                        results.append(extension.Extension(extension_info))
-
-                    # ignore exceptions
-                    except Exception:  # pylint: disable=broad-except
-                        LOGGER.exception(f"{addon=}")
+                    # create and append addon (extension)
+                    results.append(extension.Extension(extension_info))
 
         return results

@@ -130,47 +130,32 @@ def process_results(results):
 def _query_vt(items):
     """Query vt."""
 
-    query_results = {}
-
     # headers
-    request_headers = {}
+    request_headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "VirusTotal",
+    }
 
-    # set content type
-    request_headers["Content-Type"] = "application/json"
+    # build request
+    request = urllib.request.Request(
+        _VT_URL + _VT_API_KEY,
+        json.dumps(items, indent=4).encode("utf-8"),
+        headers=request_headers,
+    )
 
-    # set user agent
-    request_headers["User-Agent"] = "VirusTotal"
+    # make request
+    with urllib.request.urlopen(request) as response:
+        # convert response to JSON
+        vt_response = json.loads(response.read())
 
-    # wrap
-    try:
-
-        # build request
-        request = urllib.request.Request(
-            _VT_URL + _VT_API_KEY,
-            json.dumps(items, indent=4).encode("utf-8"),
-            headers=request_headers,
-        )
-
-        # make request
-        with urllib.request.urlopen(request) as response:
-
-            # convert response to JSON
-            vt_response = json.loads(response.read())
-
-        # process response
-        # ->should be a list of items, within the 'data' key
-        if "data" in vt_response:
-
-            # process/parse all
-            for item in vt_response["data"]:
-
-                # process
-                _put_item_to_results(item, results=query_results)
-
-    # exceptions
-    # ->ignore (likely network related)
-    except Exception:  # pylint: disable=broad-except
-        LOGGER.exception("failed to query virustotal")
+    # process response
+    # ->should be a list of items, within the 'data' key
+    query_results = {}
+    if "data" in vt_response:
+        # process/parse all
+        for item in vt_response["data"]:
+            # process
+            _put_item_to_results(item, results=query_results)
 
     return query_results
 
