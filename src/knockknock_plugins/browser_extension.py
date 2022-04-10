@@ -226,7 +226,7 @@ class Scan(KnockKnockPlugin):
 
             # scan all extensions
             # ->skip ones that are disabled, white listed, etc
-            for extension_key in extensions:
+            for extension_key in sorted(extensions):
 
                 # dictionary for extension info
                 extension_info = {}
