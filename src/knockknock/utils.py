@@ -437,22 +437,16 @@ def get_installed_apps():
 
     # on newer OS's (10.9+) system_profiler supports a timeout
     if int(get_os_version()[1]) >= 9:
-
         # add timeout
         command_line.extend(["-timeout", "60"])
 
-    try:
-        # get info about all installed apps via 'system_profiler'
-        # -> bytes output is read in as plist
-        system_profile_info = plistlib.loads(subprocess.check_output(command_line))
+    # get info about all installed apps via 'system_profiler'
+    # -> bytes output is read in as plist
+    system_profile_info = plistlib.loads(subprocess.check_output(command_line))
 
-        # get all installed apps
-        # ->under '_items' key
-        installed_apps = system_profile_info[0]["_items"]
-
-    except Exception:  # pylint: disable=broad-except
-        LOGGER.exception("get_installed_apps; bypassing get installed apps")
-        return None
+    # get all installed apps
+    # ->under '_items' key
+    installed_apps = system_profile_info[0]["_items"]
 
     return installed_apps
 
@@ -508,45 +502,35 @@ def get_process_list() -> Dict[int, ProcessInfo]:
     # ->note: first line is skipped as its the column headers
     for line in ps_output.split("\n")[1:]:
 
+        components = line.split()
+        # skip path's that don't start with '/
+        if len(components) < 5 or "/" != components[4][0]:
+            # skip
+            continue
+
         # dictionary for process info
         process_info: ProcessInfo = {}
 
-        try:
+        # pid
+        # ->key, but also but save oid into dictionary too
+        pid = int(components[0])
+        process_info["pid"] = pid
 
-            # split
-            components = line.split()
+        # ppid
+        process_info["ppid"] = int(components[1])
 
-            # skip path's that don't start with '/
-            if len(components) < 5 or "/" != components[4][0]:
+        # uid
+        process_info["uid"] = int(components[2])
 
-                # skip
-                continue
+        # etime
+        # ->convert to abs time
+        process_info["etime"] = convert_elapsed_to_abs(components[3])
 
-            # pid
-            # ->key, but also but save oid into dictionary too
-            pid = int(components[0])
-            process_info["pid"] = pid
+        # command path without args
+        process_info["path"] = components[4]
 
-            # ppid
-            process_info["ppid"] = int(components[1])
-
-            # uid
-            process_info["uid"] = int(components[2])
-
-            # etime
-            # ->convert to abs time
-            process_info["etime"] = convert_elapsed_to_abs(components[3])
-
-            # command path without args
-            process_info["path"] = components[4]
-
-            # add to list
-            processes_info[pid] = process_info
-
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception("get_process_list exception happens")
-            # skip
-            continue
+        # add to list
+        processes_info[pid] = process_info
 
     return processes_info
 
@@ -622,47 +606,29 @@ def set_process_type(processes: Mapping[int, ProcessInfo]):
 
         # non-apps can't have a dock icon
         if not app_directory:
-
             # set as non-dock
             process["type"] = PROCESS_TYPE_BG
-
-            # next
             continue
 
-        # wrap
-        try:
+        # load Info.plist
+        info_plist = load_info_plist(app_directory)
 
-            # load Info.plist
-            info_plist = load_info_plist(app_directory)
-
-            # couldn't load plist
-            if not info_plist:
-
-                # set as non-dock
-                process["type"] = PROCESS_TYPE_BG
-
-                # next
-                continue
-
-            # plist that have a LSUIElement and its set to 0x1
-            # ->background app
-            if "LSUIElement" in info_plist and info_plist["LSUIElement"] == 0x1:
-
-                # set as non-dock
-                process["type"] = PROCESS_TYPE_BG
-
-                # next
-                continue
-
-            # get here if its an .app, that doesn't have 'LSUIElement' set
-            # ->assume its a dock app
-            process["type"] = PROCESS_TYPE_DOCK
-
-        # ignore exceptions
-        except Exception:  # pylint: disable=broad-except
-            LOGGER.exception(f"set_process_type exception caught; {process=}")
-            # ignore
+        # couldn't load plist
+        if not info_plist:
+            # set as non-dock
+            process["type"] = PROCESS_TYPE_BG
             continue
+
+        # plist that have a LSUIElement and its set to 0x1
+        # ->background app
+        if "LSUIElement" in info_plist and info_plist["LSUIElement"] == 0x1:
+            # set as non-dock
+            process["type"] = PROCESS_TYPE_BG
+            continue
+
+        # get here if its an .app, that doesn't have 'LSUIElement' set
+        # ->assume its a dock app
+        process["type"] = PROCESS_TYPE_DOCK
 
 
 def find_app_directory(binary) -> Optional[str]:

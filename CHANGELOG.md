@@ -9,6 +9,8 @@ Versions before 0.1.0 are untracked
 ## [Unreleased]
 ### Changed
 * Don't use key `CFBundleInfoPlistURL` of `Info.plist` to retrieve `Info.plist` path
+* Remove all broad-except
+* Scan chrome extensions in order of extension id
 
 ### Fixed
 * `knockknock.utils.get_installed_apps` fails silently
