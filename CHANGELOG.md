@@ -7,6 +7,8 @@ Versions before 0.1.0 are untracked
 
 
 ## [Unreleased]
+
+## [0.3.0] - 2022-04-10
 ### Changed
 * Don't use key `CFBundleInfoPlistURL` of `Info.plist` to retrieve `Info.plist` path
 * Remove all broad-except
@@ -43,6 +45,7 @@ Versions before 0.1.0 are untracked
 * Reorganize project files structure
 * Sort results
 
-[Unreleased]: https://github.com/koyeung/knockknock/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/koyeung/knockknock/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/koyeung/knockknock/releases/tag/0.3.0
 [0.2.0]: https://github.com/koyeung/knockknock/releases/tag/0.2.0
 [0.1.0]: https://github.com/koyeung/knockknock/releases/tag/0.1.0
