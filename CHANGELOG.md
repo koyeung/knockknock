@@ -8,6 +8,9 @@ Versions before 0.1.0 are untracked
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-07-24
+* Use virustotal api v3 to fetch analysis stats. Require virustotal api key in environment variable `VT_API_KEY`
+
 ## [0.3.0] - 2022-04-10
 ### Changed
 * Don't use key `CFBundleInfoPlistURL` of `Info.plist` to retrieve `Info.plist` path
@@ -45,7 +48,8 @@ Versions before 0.1.0 are untracked
 * Reorganize project files structure
 * Sort results
 
-[Unreleased]: https://github.com/koyeung/knockknock/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/koyeung/knockknock/compare/0.4.0...HEAD
+[0.4.0]: https://github.com/koyeung/knockknock/releases/tag/0.4.0
 [0.3.0]: https://github.com/koyeung/knockknock/releases/tag/0.3.0
 [0.2.0]: https://github.com/koyeung/knockknock/releases/tag/0.2.0
 [0.1.0]: https://github.com/koyeung/knockknock/releases/tag/0.1.0
