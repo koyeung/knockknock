@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "knockknock"
-version = "0.3.0"
+version = "0.4.0"
 description = "Knock Knock - who's there?"
 authors = ["Your Name <you@example.com>"]
 license = "LICENSE"
