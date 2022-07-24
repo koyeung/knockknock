@@ -81,8 +81,8 @@ class File:
         # note: sets class's signatureStatus/signingAuthorities & signedByApple class vars
         self.init_signing_status()
 
-        # init VT ratio
-        self.vt_ratio = None
+        # init VT analysis stats
+        self.vt_analysis_stats = None
 
     def pretty_print(self):
         """For normal output."""
@@ -125,7 +125,7 @@ class File:
  path: {self.path}
  hash: {self.hash}
  signed? {signed_msg}
- VT ratio: {self.vt_ratio}
+ VT analysis stats: {self.vt_analysis_stats}
 """
 
         # plisted files
@@ -135,7 +135,7 @@ class File:
  plist: {self.plist}
  hash: {self.hash}
  signed? {signed_msg}
- VT ratio: {self.vt_ratio}
+ VT analysis stats: {self.vt_analysis_stats}
 """
 
     def init_signing_status(self):

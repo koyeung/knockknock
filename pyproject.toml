@@ -16,6 +16,7 @@ knockknock = 'knockknock.knockknock:knocknock'
 python = "^3.8"
 Yapsy = "^1.12.2"
 pyobjc = "^8.4.1"
+requests = "^2.28.1"
 
 [tool.poetry.dev-dependencies]
 black = "^22.1.0"
@@ -24,6 +25,7 @@ pip-audit = "^2.1.0"
 isort = "^5.10.1"
 pylint = "^2.12.2"
 mypy = "^0.942"
+types-requests = "^2.28.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
