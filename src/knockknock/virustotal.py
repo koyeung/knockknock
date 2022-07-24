@@ -4,26 +4,22 @@
 # a Creative Commons Attribution-NonCommercial 4.0 International License.
 #
 
-import json
 import logging
 import os
-import urllib.error
-import urllib.parse
-import urllib.request
+from http import HTTPStatus
+from typing import Tuple
+
+import requests
 
 from . import file
 
 LOGGER = logging.getLogger(__name__)
 
-# query URL
-_VT_URL = "https://www.virustotal.com/partners/sysinternals/file-reports?apikey="
-
-# API key
-_VT_API_KEY = "bef728a398d7b666c5fbdc6f64671161284ef49c23e270ac540ada64893b433b"
-
 
 def process_results(results):
     """Process results."""
+
+    vt_api_key = os.environ["VT_API_KEY"]
 
     vt_results = {}
 
@@ -86,18 +82,14 @@ def process_results(results):
             # when we've got 25
             # ->query VT
             if 25 == len(items):
-
-                # query
-                vt_results.update(_query_vt(items))
+                vt_results.update(_query_vt(items, api_key=vt_api_key))
 
                 # reset
                 items = []
 
     # query any remaining items
     if items:
-
-        # query
-        vt_results.update(_query_vt(items))
+        vt_results.update(_query_vt(items, api_key=vt_api_key))
 
     # (re)iterate over all detected items (results)
     # ->any that were queried add the VT results
@@ -122,63 +114,37 @@ def process_results(results):
                 continue
 
             # add VT results to item
-            startup_obj.vt_ratio = vt_results[startup_obj.hash]
+            startup_obj.vt_analysis_stats = vt_results[startup_obj.hash]
 
     return vt_results
 
 
-def _query_vt(items):
+def _query_vt(items, /, *, api_key):
     """Query vt."""
+    resources = [item["hash"] for item in items]
 
-    # headers
-    request_headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "VirusTotal",
-    }
-
-    # build request
-    request = urllib.request.Request(
-        _VT_URL + _VT_API_KEY,
-        json.dumps(items, indent=4).encode("utf-8"),
-        headers=request_headers,
+    return dict(
+        _query_vt_single_resource(resource, api_key=api_key) for resource in resources
     )
 
-    # make request
-    with urllib.request.urlopen(request) as response:
-        # convert response to JSON
-        vt_response = json.loads(response.read())
 
-    # process response
-    # ->should be a list of items, within the 'data' key
-    query_results = {}
-    if "data" in vt_response:
-        # process/parse all
-        for item in vt_response["data"]:
-            # process
-            _put_item_to_results(item, results=query_results)
+def _query_vt_single_resource(resource, /, *, api_key) -> Tuple[str, str]:
+    """Query VT for single resource (hash).
 
-    return query_results
+    :return: tuple of resource (hash) and vt report.
+    """
+    url = f"https://www.virustotal.com/api/v3/files/{resource}"
+    headers = {
+        "x-apikey": api_key,
+        "Accept": "application/json",
+    }
 
+    response = requests.get(url, headers=headers)
+    if response.status_code == HTTPStatus.NOT_FOUND:
+        response_data = response.json()
+        return resource, response_data["error"]["code"]
 
-# process a single result
-#  ->save parse/save info
-def _put_item_to_results(item, /, *, results) -> None:
+    assert response.status_code == HTTPStatus.OK
 
-    # extract found flag
-    found = item["found"]
-
-    # extract hash
-    hash_ = item["hash"]
-
-    # when item is found
-    # ->save detection ratio
-    if found:
-
-        # save detection ratio
-        results[hash_] = item["detection_ratio"]
-
-    # otherwise indicate it wasn't found
-    else:
-
-        # not found
-        results[hash_] = "not found"
+    response_data = response.json()
+    return resource, str(response_data["data"]["attributes"]["last_analysis_stats"])
