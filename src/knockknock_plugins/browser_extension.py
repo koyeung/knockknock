@@ -10,6 +10,7 @@ import glob
 import json
 import logging
 import os
+import os.path
 
 # names are lazily loaded in pyobjc modules
 # pylint: disable=no-member
@@ -238,6 +239,10 @@ class Scan(KnockKnockPlugin):
                     + "/Extensions/"
                     + extension_info["id"]
                 )
+
+                if not os.path.exists(extension_path):
+                    LOGGER.info(f"{extension_path=} not exists; skip")
+                    continue
 
                 extdir = os.listdir(extension_path)
                 for verdir in extdir:
