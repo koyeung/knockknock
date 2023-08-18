@@ -15,6 +15,8 @@ from . import file
 
 LOGGER = logging.getLogger(__name__)
 
+_REQUEST_TIMEOUT = 5  # seconds
+
 
 def process_results(results):
     """Process results."""
@@ -139,7 +141,7 @@ def _query_vt_single_resource(resource, /, *, api_key) -> Tuple[str, str]:
         "Accept": "application/json",
     }
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=_REQUEST_TIMEOUT)
     if response.status_code == HTTPStatus.NOT_FOUND:
         response_data = response.json()
         return resource, response_data["error"]["code"]
