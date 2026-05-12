@@ -2,29 +2,51 @@ name: basic_checks
 
 on: [push]
 
+concurrency:
+  group: test-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+
+permissions:
+  contents: read
+
 jobs:
 
-  lint:
+  run:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-        
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v6
         with:
-          python-version: "3.8"
+          persist-credentials: false
 
-      - name: Install supporting packages
-        run: |
-          python3 -m pip install --upgrade pip setuptools wheel
-          pip install tox poetry
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
 
-      - name: Show versions
-        run: |
-          uname -a
-          python3 --version
-          echo "tox: $(tox --version)"
-          poetry --version
-          
-      - name: Run lint
-        run: tox -e lint
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install the project
+        run: uv sync --all-packages --all-extras --dev
+
+      - name: Format
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "format --check"
+
+      - name: Type check
+        run: uv run --with=pip mypy --install-types --non-interactive src
+
+      - name: Static analysis
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "check"
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
