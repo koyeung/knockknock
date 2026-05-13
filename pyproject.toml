@@ -1,35 +1,34 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.11.8,<0.12" ]
+
 [project]
 name = "knockknock"
 version = "0.4.0"
 description = "Knock Knock - who's there?"
 readme = "README.md"
-authors = [
-    { name = "YEUNG King On", email = "koyeung@gmail.com" }
-]
+authors = [ { name = "YEUNG King On", email = "koyeung@gmail.com" } ]
 requires-python = ">=3.14"
-dependencies = [
-    "pyobjc>=12.1",
-    "requests>=2.33.1",
-    "yapsy>=1.12.2",
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
 ]
-
-[project.scripts]
-knockknock = "knockknock.knockknock:knocknock"
-
-[build-system]
-requires = ["uv_build>=0.11.8,<0.12.0"]
-build-backend = "uv_build"
+dependencies = [
+  "pyobjc>=12.1",
+  "requests>=2.33.1",
+  "yapsy>=1.12.2",
+]
+scripts.knockknock = "knockknock.knockknock:knocknock"
 
 [dependency-groups]
 dev = [
-    "mypy>=1.20.2",
-    "types-requests>=2.33.0",
+  "mypy>=1.20.2",
+  "types-requests>=2.33",
 ]
-
-[tool.mypy]
-ignore_missing_imports = true
 
 [tool.uv]
 exclude-newer = "1 week"
 exclude-newer-package = { urllib3 = "3 days" }
 
+[tool.mypy]
+ignore_missing_imports = true

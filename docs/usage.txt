@@ -5,7 +5,7 @@ KnockKnock is command line python script that displays persistent OS X binaries 
 KnockKnock requires no arguments to enumerate persistent binaries:
 $ knockknock
 
-However, various command line parameters can be used to control the scanning and output. To see these, run KnockKnock with the -h flag. 
+However, various command line parameters can be used to control the scanning and output. To see these, run KnockKnock with the -h flag.
 
 knockknock -h
 
@@ -18,17 +18,17 @@ optional arguments:
   -l, --list            		list all plugins
   -j, --json            		produce output in JSON format
 
-The extra command line arguments are all optional, and hopefully self-explanatory. However, they are described here for completeness. 
+The extra command line arguments are all optional, and hopefully self-explanatory. However, they are described here for completeness.
 
 The -h command, as previously mentioned provide a brief help, or usage statement.
 
 The -p command, (which requires a plugin name), will cause KnockKnock to only execute a single plugin (the default is to run all plugins). This can be useful for testing/debugging purposes, or for limiting the overall output. Note, to enumerate the names of all registered plugins, run KnockKnock with the -l command.
 
-The -v command enables verbose output. This produces some informational debugging output which may be helpful for testing/debugging, or just to get a behind-the-scenes look at what’s going on. 
+The -v command enables verbose output. This produces some informational debugging output which may be helpful for testing/debugging, or just to get a behind-the-scenes look at what’s going on.
 
 The -a command instructs KnockKnock to include Apple signed binaries in its output. By default, KnockKnock will not display persistent binaries that are signed by Apple (and who’s signature is still verifiable).
 
-The -w command instructs KnockKnock to include white-listed binaries and commands in its output. By default, KnockKnock will not display persistent commands or files that have been verified to be benign (e.g., 3rd-party binaries that included in a pristine install of OS X). 
+The -w command instructs KnockKnock to include white-listed binaries and commands in its output. By default, KnockKnock will not display persistent commands or files that have been verified to be benign (e.g., 3rd-party binaries that included in a pristine install of OS X).
 
 The -l command lists all plugins that are registered with KnockKnock. (Recall that there generally is one plugin per persistence class). As previously mentioned this command is often ran to determine the name of a plugin to pass to the -p command.
 

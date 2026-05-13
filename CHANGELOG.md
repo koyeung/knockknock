@@ -41,7 +41,7 @@ Versions before 0.1.0 are untracked
 ## [0.1.0] - 2022-03-22
 ### Changed
 * Run on python 3
-  * Not necessary to use Python from bundled with OS 
+  * Not necessary to use Python from bundled with OS
   * Upgrade [pyobjc](https://pypi.org/project/pyobjc/), [Yapsy](https://pypi.org/project/Yapsy/)
 * Enforce formatting by [black](https://pypi.org/project/black/)
 * Enforce import sort by [isort](https://pypi.org/project/isort/)

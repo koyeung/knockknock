@@ -30,14 +30,14 @@ Version = <version of the plugin>
 Description = <description of what the plugin does>
 ```
 
-Everything in this file is fairly self-explanatory. 
-However it is worth reiterating that the value of ‘Module’ field must match the name of the 
-plugin’s python file (minus the .py file extension). 
-For example, if a plugin is implemented within some_plugin.py, 
+Everything in this file is fairly self-explanatory.
+However it is worth reiterating that the value of ‘Module’ field must match the name of the
+plugin’s python file (minus the .py file extension).
+For example, if a plugin is implemented within some_plugin.py,
 the ‘Module’ field would contain ‘some_plugin’ as its value.
 
 The actual code for the plugin must perform several actions in order to conform as an invokable
-plugin. However, these are fairly straightforward, and can be easily templatized. 
+plugin. However, these are fairly straightforward, and can be easily templatized.
 First the plugin should import the plugin interface definition via:
 
 ```python
@@ -56,20 +56,20 @@ class Scan(KnockKnockPlugin):
 The scan class method is automatically invoked by the KnockKnock core when the plugin is loaded and
 executed. As such, the plugin’s logic should begin here.
 The plugin, which will be enumerating a specific persistence class, is free to gather information
-in any way it sees fit. This information is then returned to the KnockKnock core by returning a 
-dictionary from the scan() method. 
+in any way it sees fit. This information is then returned to the KnockKnock core by returning a
+dictionary from the scan() method.
 
 In order for the results to be ‘readable’ by the core,
 the `scan()` function must return a dictionary that contains several required key/value pairs.
 These include:
 
-‘name’ : the name persistence class 
+‘name’ : the name persistence class
 ‘description’ : description of the persistence class
 ‘items’ :	list of persistence objects detected by the plugin
 
 While the ‘name’ and ‘description’ members of the result dictionary are mostly for informational
 purposes and can contain anything the plugin author decides, the ‘items’ list requires more
-discussion. 
+discussion.
 
 KnockKnock recognized two types of persistence items; files and commands.
 Files include binaries, applications, etc, while commands are persistent instructions that are
@@ -129,7 +129,7 @@ class Scan(KnockKnockPlugin):
 	"""Scan action."""
 	#kexts
 	kexts = []
-	
+
 	#init results dictionary
 	results = self.init_results('Kernel Extensions', 'KEXT_DESCRIPTION')
 

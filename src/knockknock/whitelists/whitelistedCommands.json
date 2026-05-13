@@ -1,9 +1,8 @@
 {
- "commands":
- [
+  "commands": [
     "alias ConsoleMessage=echo",
     "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/libexec:/System/Library/CoreServices; export PATH",
     "set -u",
     ". /etc/hostconfig"
- ]
+  ]
 }
