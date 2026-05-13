@@ -4,6 +4,7 @@ browser extensions can provide a way for code to be executed whenever the browse
 this plugin parses meta data files/directories of Safari, Chrome,
 and Firefox to find all installed extensions
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -67,10 +68,8 @@ class Scan(KnockKnockPlugin):
         # iterate over all browsers
         # ->scan each
         for browser in browsers:
-
             # scan Safari extensions
             if "Safari.app" in browser:
-
                 LOGGER.info("safari installed, scanning for extensions")
 
                 # init results
@@ -85,7 +84,6 @@ class Scan(KnockKnockPlugin):
 
             # scan Chrome extensions
             if "Google Chrome.app" in browser:
-
                 LOGGER.info("chrome installed, scanning for extensions")
 
                 # init results
@@ -100,7 +98,6 @@ class Scan(KnockKnockPlugin):
 
             # scan Firefox extensions
             if "Firefox.app" in browser:
-
                 LOGGER.info("firefox installed, scanning for extensions")
 
                 # init results
@@ -127,7 +124,6 @@ class Scan(KnockKnockPlugin):
 
         # app IDs to full paths to the apps
         for browser_id in browsers_ids:
-
             # use LSFindApplicationForInfo to convert ID to app path
             # returns a list, 3rd item an NSURL to the browser
             browser_url = CoreServices.LSFindApplicationForInfo(
@@ -154,7 +150,6 @@ class Scan(KnockKnockPlugin):
 
         # parse each for extensions
         for safari_extension_file in safari_extension_files:
-
             # load extension file
             plist_data = utils.load_plist(safari_extension_file)
 
@@ -167,7 +162,6 @@ class Scan(KnockKnockPlugin):
             # scan all extensions
             # ->skip ones that are disabled, white listed, etc
             for current_extension in extensions:
-
                 # skip disabled plugins
                 if "Enabled" in current_extension and not current_extension["Enabled"]:
                     continue
@@ -208,10 +202,8 @@ class Scan(KnockKnockPlugin):
 
         # parse each for extensions
         for chrome_preference_file in chrome_preferences:
-
             # open preference file and load it
             with open(chrome_preference_file, "r", encoding="utf-8") as file:
-
                 # load as JSON
                 preferences = json.loads(file.read())
                 if not preferences:
@@ -228,7 +220,6 @@ class Scan(KnockKnockPlugin):
             # scan all extensions
             # ->skip ones that are disabled, white listed, etc
             for extension_key in sorted(extensions):
-
                 # dictionary for extension info
                 extension_info = {}
 
@@ -283,7 +274,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all addons and extensions files in profile directories
         # ->extact all addons and extensions
         for firefox_profile_directory in firefox_profile_directories:
-
             # get list of all 'addon.json' files
             firefox_extension_files = glob.glob(
                 firefox_profile_directory + "/*.default*/addons.json"
@@ -297,7 +287,6 @@ class Scan(KnockKnockPlugin):
             # open/parse each addon file
             # ->contains list of addons (extensions)
             for firefox_extension_file in firefox_extension_files:
-
                 # open extension file and load it
                 with open(firefox_extension_file, "r", encoding="utf-8") as file:
                     # load as JSON
@@ -308,7 +297,6 @@ class Scan(KnockKnockPlugin):
                 # extract all addons/extensions
                 # ->in both addons and extensions json files, called addons :/
                 for addon in addons:
-
                     # dictionary for addon/extension info
                     extension_info = {}
 
@@ -324,7 +312,6 @@ class Scan(KnockKnockPlugin):
 
                     # json in addons.json file is formatted one way
                     if "addons.json" == os.path.split(firefox_extension_file)[1]:
-
                         # extract name
                         if "name" in addon:
                             # save
@@ -355,7 +342,6 @@ class Scan(KnockKnockPlugin):
 
                     # json in extensions.json file is formatted another way
                     else:
-
                         # extract name
                         if (
                             "defaultLocale" in addon

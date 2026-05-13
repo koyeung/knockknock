@@ -6,6 +6,7 @@ launch daemons and agents are binaries that can be automatically loaded by the O
 this plugin parses all plists within the OS's and users' launchd daemon/agent directories
 and extracts all auto-launched daemons/agents
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -103,7 +104,6 @@ class Scan(KnockKnockPlugin):
 
         # get all files (plists) in launch daemon/agent directories
         for directory in directories:
-
             LOGGER.info("scanning %s", directory)
 
             # get launch daemon/agent
@@ -116,7 +116,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all auto-run items (list of the plist and the binary)
         # ->create file object and add to results
         for auto_run_item in auto_run_items:
-
             # create and append
             results.append(file.File(auto_run_item[0], auto_run_item[1]))
 
@@ -135,7 +134,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all plist
         # ->check 'RunAtLoad' (for true) and then extract the first item in the 'ProgramArguments'
         for plist in plists:
-
             # load plist
             plist_data = utils.load_plist(plist)
             # skip files that couldn't be loaded
@@ -148,7 +146,6 @@ class Scan(KnockKnockPlugin):
 
             # check for 'ProgramArguments' key
             if "ProgramArguments" in plist_data:
-
                 # extract program arguments
                 program_arguments = plist_data["ProgramArguments"]
 
@@ -162,7 +159,6 @@ class Scan(KnockKnockPlugin):
                 # skip files that aren't found
                 # ->will try 'which' to resolve things like 'bash', etc
                 if not os.path.isfile(binary):
-
                     # try which
                     binary = utils.which(binary)
                     if not binary:
@@ -171,7 +167,6 @@ class Scan(KnockKnockPlugin):
             # also check for 'Program' key
             # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
             elif "Program" in plist_data:
-
                 # extract binary
                 binary = plist_data["Program"]
                 # skip files that aren't found
@@ -213,7 +208,6 @@ class Scan(KnockKnockPlugin):
             and plist_data["Label"] in self.overridden_items
             and self.overridden_items[plist_data["Label"]]
         ):
-
             # print 'skipping disabled item (override): %s'
             # % self.overriddenItems[plistData['Label']]
 
@@ -223,13 +217,11 @@ class Scan(KnockKnockPlugin):
         # skip disabled launch items
         # ->have to also check the overrides dictionary though
         if "Disabled" in plist_data and plist_data["Disabled"]:
-
             # make sure its not overridden (and enabled there)
             if (
-                not plist_data["Label"] in self.overridden_items
+                plist_data["Label"] not in self.overridden_items
                 or not self.overridden_items[plist_data["Label"]]
             ):
-
                 # skip
                 # print 'skipping disabled item: %s' % self.overriddenItems[plistData['Label']]
 
@@ -238,33 +230,28 @@ class Scan(KnockKnockPlugin):
 
         # set 'run at load' flag
         if "RunAtLoad" in plist_data and bool is type(plist_data["RunAtLoad"]):
-
             # set
             run_at_load = plist_data["RunAtLoad"]
 
         # set 'keep alive' flag
         if "KeepAlive" in plist_data and bool is type(plist_data["KeepAlive"]):
-
             # set
             keep_alive = plist_data["KeepAlive"]
 
         # set 'on demand' flag
         if "OnDemand" in plist_data:
-
             # set
             on_demand = plist_data["OnDemand"]
 
         # first check 'run at load' & 'keep alive'
         # ->either of these set to ok, means auto run!
         if run_at_load is True or keep_alive is True:
-
             # yups
             is_auto_run = True
 
         # when neither 'RunAtLoad' and 'KeepAlive' not found
         # ->check if 'OnDemand' is set to false (e.g. HackingTeam)
         elif ((run_at_load == -1) and (keep_alive == -1)) and (on_demand is False):
-
             # yups
             is_auto_run = True
 
@@ -278,7 +265,6 @@ class Scan(KnockKnockPlugin):
         # process
         # ->check all files for overrides
         for overide in overrides:
-
             LOGGER.info("opening %s", overide)
 
             # load plist and check
@@ -288,7 +274,6 @@ class Scan(KnockKnockPlugin):
 
             # now parse 'normal' overrides
             for override_item in plist_data:
-
                 # check if item has disabled flag (true/false)
                 if "Disabled" in plist_data[override_item]:
                     # save

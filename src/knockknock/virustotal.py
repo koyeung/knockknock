@@ -34,29 +34,24 @@ def process_results(results):
 
     # process items, 25 at a time
     for result in results:
-
         # iterate over each plugin's results
         for startup_obj in result["items"]:
-
             # data for item (file)
             item_data = {}
 
             # only process files
             # ->note, plugins don't be mixed item items, so can bail here
             if not isinstance(startup_obj, file.File):
-
                 # stop processing this item group
                 break
 
             # skip items that don't have hashes
             if not startup_obj.hash:
-
                 # skip
                 continue
 
             # skip values that already have been queried
             if startup_obj.hash in queried_items:
-
                 # skip
                 continue
 
@@ -96,22 +91,18 @@ def process_results(results):
     # (re)iterate over all detected items (results)
     # ->any that were queried add the VT results
     for result in results:
-
         # iterate over each plugin's results
         for startup_obj in result["items"]:
-
             # skip non-item files, or items that weren't queried
             if (
                 not isinstance(startup_obj, file.File)
                 or startup_obj.hash not in queried_items
             ):
-
                 # skip
                 continue
 
             # skip items that didn't get a response
             if startup_obj.hash not in vt_results:
-
                 # skip
                 continue
 

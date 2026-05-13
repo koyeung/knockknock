@@ -10,6 +10,7 @@ startup items
 
     this plugin examines files within the OS's startup items directories to find any startup items
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -48,7 +49,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all base startup item directories
         # ->look for startup items
         for startup_item_base_directory in STARTUP_ITEM_BASE_DIRECTORIES:
-
             # get sub directories
             # ->these are the actual startup items
             startup_item_directories = glob.glob(startup_item_base_directory + "*")
@@ -56,7 +56,6 @@ class Scan(KnockKnockPlugin):
             # check the sub directory (which is likely a startup item)
             # ->there should be a file (script) which matches the name of the sub-directory
             for startup_item_directory in startup_item_directories:
-
                 # init the startup item
                 startup_item = (
                     startup_item_directory
@@ -66,7 +65,6 @@ class Scan(KnockKnockPlugin):
 
                 # check if it exists
                 if os.path.exists(startup_item):
-
                     # save
                     results["items"].append(file.File(startup_item))
 

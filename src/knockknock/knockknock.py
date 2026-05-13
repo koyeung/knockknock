@@ -57,31 +57,25 @@ def knocknock():
     # depending on args
     # filter out apple signed binaries, or whitelisted binaries, etc
     if not args.apple or not args.whitelist:  # or args.signed:
-
         # iterate over all results
         # ->one for each startup item type
         for result in results:
-
             # ignored/whitelisted items
             ignored_items = []
 
             # scan each startup object
             # ->if it should be ingored, add to ignore list
             for startup_obj in result["items"]:
-
                 # filter out files
                 # ->depending on args, singed by apple, whitelisted, etc
                 if isinstance(startup_obj, file.File):
-
                     # by default, ignore signed by Apple
                     if not args.apple and startup_obj.signed_by_apple:
-
                         # add to list
                         ignored_items.append(startup_obj)
 
                 # ignore white listed items
                 if not args.whitelist and startup_obj.is_whitelisted:
-
                     # add to list
                     ignored_items.append(startup_obj)
 
@@ -95,7 +89,6 @@ def knocknock():
 
     # get vt results
     if not args.disableVT:
-
         LOGGER.info("querying VirusTotal - sit tight!")
 
         # process
@@ -126,7 +119,6 @@ def remove_dups_from_unclassified(results) -> None:
 
     # bail if there aren't any
     if not unclassified_items:
-
         # none
         return
 
@@ -140,10 +132,8 @@ def remove_dups_from_unclassified(results) -> None:
     # look at each unclass item
     # ->remove it if its reported elsewhere
     for unclassified_item in first_unclassified_items["items"]:
-
         # only keep otherwise unknown items
         if hashes.count(unclassified_item.hash) == 0x1:
-
             # save
             unique_items.append(unclassified_item)
 
@@ -159,13 +149,10 @@ def all_hashes(results):
     # iterate over all results
     # ->grab file hashes
     for result in results:
-
         # hash all files
         for startup_obj in result["items"]:
-
             # check for file
             if isinstance(startup_obj, file.File):
-
                 # save hash
                 hashes.append(startup_obj.hash)
 
@@ -305,7 +292,6 @@ def _scan(*, plugin_name: Optional[str], plugin_manager: PluginManager) -> List[
 
     # iterate over all plugins
     for plugin in plugin_manager.getPluginsOfCategory(_KK_PLUGINS_CATEGORY):
-
         # results from plugin
         plugin_results = None
 
@@ -318,14 +304,12 @@ def _scan(*, plugin_name: Optional[str], plugin_manager: PluginManager) -> List[
 
         # try to find match
         else:
-
             # get name of plugin file as name
             # ->e.g. /plugins/somePlugin.py -> 'somePlugin'
             current_plugin = os.path.split(plugin.path)[1]
 
             # check for match
             if plugin_name.lower() == current_plugin.lower():
-
                 # found it
                 found_plugin = True
 
@@ -336,24 +320,20 @@ def _scan(*, plugin_name: Optional[str], plugin_manager: PluginManager) -> List[
 
         # save plugin output
         if plugin_results:
-
             # plugins normally return a single dictionary of results
             if isinstance(plugin_results, dict):
-
                 # save results
                 results.append(plugin_results)
 
             # some plugins though can return a list of dictionaries
             # ->e.g. the launch daemon/agent plugin (one dictionary for each type)
             elif isinstance(plugin_results, list):
-
                 # save results
                 results.extend(plugin_results)
 
         # check if specific plugin was specified and found
         # ->if so, can bail
         if plugin_name and found_plugin:
-
             # bail
             break
 
@@ -368,6 +348,5 @@ def _scan(*, plugin_name: Optional[str], plugin_manager: PluginManager) -> List[
 
 # invoke main interface
 if __name__ == "__main__":
-
     # main interface
     knocknock()

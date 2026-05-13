@@ -4,6 +4,7 @@ conjobs allow scripts or commands to be executed on time-based intervals
 this plugin reads all users' cronjob files (/private/var/at/tabs/*)
 to extract all registered cronjobs
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -43,17 +44,13 @@ class Scan(KnockKnockPlugin):
         # process
         # ->open file and read each line
         for cron_job_file in cron_job_files:
-
             # open file
             # ->read each line (for now, assume 1 cron job per line)
             with open(cron_job_file, "r", encoding="utf-8") as file:
-
                 # read each line
                 for cron_job_data in file:
-
                     # skip comment lines
                     if cron_job_data.lstrip().startswith("#"):
-
                         # skip
                         continue
 

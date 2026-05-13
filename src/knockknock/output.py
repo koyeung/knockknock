@@ -13,7 +13,6 @@ class JSONEncoder(json.JSONEncoder):
         # for file and command objects
         # ->return the objects dictionary
         if isinstance(o, (file.File, command.Command, extension.Extension)):
-
             # object dictionary
             return o.__dict__
 
@@ -38,28 +37,23 @@ def format_results(results, as_json: bool) -> str:
     # format as JSON
     # ->uses the jsonDecoder class (above) to dump the objects dictionary
     if as_json:
-
         # will generate JSON
         formatted_results = json.dumps(results, cls=JSONEncoder, indent=4)
 
     # pretty print the output for stdout
     else:
-
         # dbg msg
         formatted_results += "WHO'S THERE:\n"
 
         # iterate over all results
         for result in _sort_results(results):
-
             # add header (name)
             if result["items"]:
-
                 # format name/type of startup item
                 formatted_results += "\n[" + result["name"] + "]\n"
 
             # iterate over each startup object
             for startup_obj in _sort_startup_objs(result["items"]):
-
                 # inc count
                 startup_obj_count += 1
 
@@ -69,13 +63,11 @@ def format_results(results, as_json: bool) -> str:
 
         # none found?
         if not startup_obj_count:
-
             # nothing found
             formatted_results += "-> nobody :)\n"
 
         # add info about totals
         else:
-
             # add total
             formatted_results += f"\nTOTAL ITEMS FOUND: {startup_obj_count}\n"
 

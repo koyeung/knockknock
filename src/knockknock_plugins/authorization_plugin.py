@@ -3,6 +3,7 @@
 os x supports the notion of custom authorization plugins
 this plugin enumerates all such authorization plugins, that will be automatically loaded by the OS
 """
+
 __author__ = "patrick w"
 
 
@@ -51,17 +52,14 @@ class Scan(KnockKnockPlugin):
         # process
         # ->gets bundle's binary, then create file object and add to results
         for auth_plugin in auth_plugins:
-
             # skip any non-bundles
             # ->just do a directory check
             if not os.path.isdir(auth_plugin):
-
                 # skip
                 continue
 
             # skip any invalid bundles
             if not utils.get_binary_from_bundle(auth_plugin):
-
                 # skip
                 continue
 

@@ -5,6 +5,7 @@ the DYLD_INSERT_LIBRARIES environment variable can be set to the path of a dynam
 for local settings, the plugin scans plists of launch daemons and agents,
 and all installed apps to determine if any dylibs are set for global settings, the plugin...
 """
+
 __author__ = "patrick w"
 
 
@@ -135,7 +136,6 @@ def _scan_applications() -> Optional[List[file.File]]:
     info_plists = []
 
     for app in installed_apps:
-
         app_name = app["_name"]
 
         if "path" not in app:
@@ -143,9 +143,9 @@ def _scan_applications() -> Optional[List[file.File]]:
             continue
 
         plist = utils.load_info_plist(app["path"])
-        assert (
-            "CFBundleInfoPlistURL" not in plist
-        ), "ensure CFBundleInfoPlistURL not in plist and use Contents/Info.plist instead"
+        assert "CFBundleInfoPlistURL" not in plist, (
+            "ensure CFBundleInfoPlistURL not in plist and use Contents/Info.plist instead"
+        )
 
         plist_path_obj = Path(f"{app['path']}") / "Contents" / "Info.plist"
         if plist_path_obj.exists():
@@ -183,7 +183,6 @@ def _scan_plist_file(plist_file: PListFile, /, *, env_key: str) -> List[file.Fil
     # -> will be either 'EnvironmentVariables' or 'LSEnvironment'
     # depends on if launch item or app
     if env_key in plist_file.plist:
-
         env_plist = plist_file.plist[env_key]
 
         # check for/save DYLD_INSERT_LIBRARIES

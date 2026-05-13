@@ -27,25 +27,21 @@ class Extension:
 
         # extract/save id
         if "id" in extension_info:
-
             # save
             self.extension_id = extension_info["id"]
 
         # extract/save name
         if "name" in extension_info:
-
             # save
             self.name = extension_info["name"]
 
         # extract/save path
         if "path" in extension_info:
-
             # save
             self.path = extension_info["path"]
 
         # extract/save description
         if "description" in extension_info:
-
             # save
             self.description = extension_info["description"]
 

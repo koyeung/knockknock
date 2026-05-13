@@ -5,6 +5,7 @@ the /etc/launchd.conf file contains commands that are that are executed at boot 
 this plugin (very basically) parses this file, extacting all such commands
 And, Apple removed /etc/launchd.conf in 2014 or so.  This plugin ought to be disabled.
 """
+
 __author__ = "patrick w"
 
 import logging
@@ -44,7 +45,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all commands
         # ->instantiate command obj and save into results
         for extracted_command in commands:
-
             # TODO: could prolly do some more advanced processing (e.g. look for bsexec, etc)
 
             # instantiate and save

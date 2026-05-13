@@ -4,6 +4,7 @@ to be automatically executed
 this plugin scans the OS's override directory and parses files to overridden items set for
 auto execution
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -62,7 +63,6 @@ class Scan(KnockKnockPlugin):
         # process
         # ->check all files for overrides
         for override in overrides:  # pylint: disable=too-many-nested-blocks
-
             # load plist and check
             plist_data = utils.load_plist(override)
 
@@ -75,7 +75,6 @@ class Scan(KnockKnockPlugin):
             # extract sandboxed login items
             # ->helper apps
             if "_com.apple.SMLoginItemBookmarks" in plist_data:
-
                 # sandbox login items
                 #
                 # extract all
@@ -87,7 +86,6 @@ class Scan(KnockKnockPlugin):
                 # iterate over all
                 # ->extract from bookmark blob
                 for sandboxed_login_item in sandboxed_login_items_bookmarks:
-
                     # print 'sandboxed item from SMLoginItemBookmarks: %s'
                     # % sandboxedLoginItem
 
@@ -118,7 +116,6 @@ class Scan(KnockKnockPlugin):
 
             # now parse 'normal' overrides
             for override_item in plist_data:
-
                 # skip the overrides that are also in the bookmark dictionary
                 # ->these were already processed (above)
                 if (
@@ -168,7 +165,6 @@ class Scan(KnockKnockPlugin):
 
         # try to find start/end
         if marker_offset != -1:
-
             # scan backward to find ';'
             login_item_start = bookmark_data_str[:marker_offset].rfind(";")
 
@@ -177,7 +173,6 @@ class Scan(KnockKnockPlugin):
 
         # extract logig item if start and end were found
         if login_item_start != -1 and login_item_end != -1:
-
             # extact item
             # note: skip ';' at front (thus the +1)
             login_item = bookmark_data_str[
@@ -209,7 +204,6 @@ class Scan(KnockKnockPlugin):
 
         # attempt to find bundle ID in any of the directories
         for directory in directories:
-
             # init candidate plist path
             plist_path = directory + bundle_id + ".plist"
 
@@ -222,7 +216,6 @@ class Scan(KnockKnockPlugin):
 
             # check if 'ProgramArguments' exists
             if "ProgramArguments" in plist_data:
-
                 # extract program arguments
                 program_arguments = plist_data["ProgramArguments"]
 
@@ -235,7 +228,6 @@ class Scan(KnockKnockPlugin):
             # check if 'Program' key contains binary
             # ->e.g. /System/Library/LaunchAgents/com.apple.mrt.uiagent.plist
             elif "Program" in plist_data:
-
                 # check if its a file
                 if os.path.isfile(plist_data["Program"]):
                     # happy, got binary for bundle id

@@ -1,4 +1,5 @@
 """Provide utilities functions."""
+
 __author__ = "patrick"
 
 # names are lazily loaded in pyobjc modules
@@ -59,13 +60,13 @@ def get_kk_directory() -> Path:
 def get_plugins_directory() -> Path:
     """Get path of plugin directory."""
     knockknock_plugins_spec = importlib.util.find_spec(KNOCKKNOCK_PLUGINS)
-    assert (
-        knockknock_plugins_spec
-    ), f"unable to find module spec of {KNOCKKNOCK_PLUGINS}"
+    assert knockknock_plugins_spec, (
+        f"unable to find module spec of {KNOCKKNOCK_PLUGINS}"
+    )
 
-    assert (
-        knockknock_plugins_spec.submodule_search_locations
-    ), f"{KNOCKKNOCK_PLUGINS} submodule_search_locations not exists"
+    assert knockknock_plugins_spec.submodule_search_locations, (
+        f"{KNOCKKNOCK_PLUGINS} submodule_search_locations not exists"
+    )
     return Path(knockknock_plugins_spec.submodule_search_locations[0])
 
 
@@ -157,7 +158,6 @@ def is_kext(path: str):
     info_plist = load_info_plist(path)
 
     if info_plist and "CFBundlePackageType" in info_plist:
-
         package_type = info_plist["CFBundlePackageType"]
         return package_type.upper() == "KEXT"
 
@@ -186,7 +186,6 @@ def check_signature(file: str):
         path, Security.kSecCSDefaultFlags, None
     )
     if result != errSecSuccess:
-
         # when user isn't r00t and error is accessed denied
         # ->treat error as just an INFO (addresses issue of '/usr/sbin/cupsd')
         log_level = (
@@ -215,7 +214,6 @@ def check_signature(file: str):
     # make sure binary is signed
     # ->then, determine if signed by apple & always extract signing authorities
     if signed_status == errSecSuccess:
-
         # set requirement string
         # ->check for 'signed by apple'
         requirements_string = NSString("anchor apple")
@@ -226,7 +224,6 @@ def check_signature(file: str):
             requirements_string, Security.kSecCSDefaultFlags, None
         )
         if result == errSecSuccess:
-
             # verify against requirement signature
             result = Security.SecStaticCodeCheckValidity(
                 static_code, sig_check_flags, requirement
@@ -250,7 +247,6 @@ def check_signature(file: str):
 
         # get all certs
         for cert in cert_chain:
-
             # get cert's common name and check
             result, cert_name = Security.SecCertificateCopyCommonName(cert, None)
             if result != errSecSuccess:
@@ -294,57 +290,47 @@ def parse_bash_file(file_path: str):
 
     # wrap
     try:
-
         # open
         with open(file_path, mode="r") as file:  # pylint: disable=unspecified-encoding
-
             # read lines
             lines = file.readlines()
 
     # just bail on error
     except OSError:
-
         # bail with empty commands
         return commands
 
     # parse each line
     # ->looking for commands that aren't commented out, and that are not within a function
     for index, line in enumerate(lines):
-
         # strip line
         stripped_line = line.strip()
 
         # skip blank lines
         if not stripped_line:
-
             # skip
             continue
 
         # skip comments
         if stripped_line.startswith("#"):
-
             # skip
             continue
 
         # keep count of '{' and '{'
         if stripped_line.startswith("{"):
-
             # inc
             bracket_count += 1
 
         # keep count of '{' and '{'
         if stripped_line.startswith("}"):
-
             # dec
             bracket_count -= 1
 
         # check if in function
         # ->ignore all commands, though care about end of function
         if in_function:
-
             # check for end of function
             if stripped_line.startswith("}") and bracket_count == 0:
-
                 # end of function
                 in_function = False
 
@@ -358,7 +344,6 @@ def parse_bash_file(file_path: str):
             and index != len(lines) - 1
             and lines[index + 1].strip().startswith("{")
         ):
-
             # entered function
             in_function = True
 
@@ -368,7 +353,6 @@ def parse_bash_file(file_path: str):
         # check for function start
         # -> a line ends with () {
         if "".join(stripped_line.split()).endswith("(){"):
-
             # inc
             bracket_count += 1
 
@@ -396,24 +380,20 @@ def find_bundles(start_directory: str, pattern: str, depth: int) -> List[str]:
     # get all directories under directory
     # ->walk top down, so depth checks work
     for root, dirnames, _ in os.walk(start_directory, topdown=True):
-
         # check depth
         # ->null out remaining dirname if depth is hit
         if root.count(os.path.sep) - initial_depth >= depth:
-
             # null out
             dirnames[:] = []
 
         # filter directories
         # ->want a bundle that matches the pattern
         for dir_ in dirnames:
-
             # full path
             full_path = os.path.join(root, dir_)
 
             # check if matches patter and is a bundle
             if pattern in dir_ and Foundation.NSBundle.bundleWithPath_(full_path):
-
                 # save
                 matched_bundles.append(full_path)
 
@@ -457,16 +437,13 @@ def md5sum(filename: str) -> Optional[str]:
     see: https://stackoverflow.com/questions/7829499/using-hashlib-to-compute-md5-digest-of-a-file-in-python-3
     """  # pylint: disable=line-too-long
     try:
-
         # open
         with open(filename, mode="rb") as file_:
-
             # init hash
             digest = hashlib.md5()
 
             # read in/hash
             while True:
-
                 # read in chunk
                 buf = file_.read(4096)
 
@@ -501,7 +478,6 @@ def get_process_list() -> Dict[int, ProcessInfo]:
     # parse/split output
     # ->note: first line is skipped as its the column headers
     for line in ps_output.split("\n")[1:]:
-
         components = line.split()
         # skip path's that don't start with '/
         if len(components) < 5 or "/" != components[4][0]:
@@ -540,7 +516,6 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
 
     # iterate over all processes
     for process in processes.values():
-
         # default gpid
         process["gpid"] = -1
 
@@ -548,7 +523,6 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
 
         # skip if ppid is 0x0 or 0x1 (launchd)
         if ppid in (0x0, 0x1):
-
             # set to self parent
             process["gpid"] = ppid
 
@@ -557,7 +531,6 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
 
         # sanity check
         if ppid not in processes:
-
             # try next
             continue
 
@@ -566,12 +539,10 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
 
         # search for parent right below launchd (pid 0x1)
         while True:
-
             parent_ppid = cast(int, parent_process["ppid"])
 
             # found it?
             if parent_ppid == 0x1:
-
                 # save this as the gpid
                 process["gpid"] = parent_process["pid"]
 
@@ -580,7 +551,6 @@ def set_first_parent(processes: Mapping[int, ProcessInfo]):
 
             # sanity check
             if parent_ppid not in processes:
-
                 # couldn't find parent's pid
                 # ->just save current parent's pid as gpid
                 process["gpid"] = parent_process["pid"]
@@ -600,7 +570,6 @@ def set_process_type(processes: Mapping[int, ProcessInfo]):
 
     # iterate over all processes
     for process in processes.values():
-
         # get processes .app/ (bundle) directory
         app_directory = find_app_directory(process["path"])
 
@@ -642,20 +611,17 @@ def find_app_directory(binary) -> Optional[str]:
 
     # bail if path doesn't contain '.app'
     if ".app" not in binary:
-
         # bail
         return None
 
     # scan back up to .app/
     while "/" != split_path and not split_path.endswith(".app"):
-
         # split and grab directory component
         # ->this will be one directory
         split_path = os.path.split(split_path)[0]
 
     # bail if not found
     if not split_path.endswith(".app"):
-
         # bail
         return None
 
@@ -664,7 +630,6 @@ def find_app_directory(binary) -> Optional[str]:
 
     # bail if app's executable matches what was passed in
     if main_bundle is None or main_bundle.executablePath != binary:
-
         # match, so save .app/ dir
         app_directory = split_path
 
@@ -692,13 +657,11 @@ def convert_elapsed_to_abs(elapsed_time) -> int:
 
     # hours are optional
     if len(time_component) >= 3:
-
         # add hours
         absolute_time += int(time_component[-3]) * 60 * 60
 
     # days are optional
     if len(time_component) == 4:
-
         # add hours
         absolute_time += int(time_component[-4]) * 60 * 60 * 24
 
@@ -716,13 +679,11 @@ def which(binary: str) -> Optional[str]:
     # iterate over all paths
     # ->build path and see if exists
     for path in paths:
-
         # build path to candidate
         candidate = os.path.join(path, binary)
 
         # does it exist?
         if os.path.isfile(candidate):
-
             # happy
             return candidate
 

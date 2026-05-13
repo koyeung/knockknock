@@ -8,6 +8,7 @@ rc script
     (not in functions)
 
 """
+
 __author__ = "patrick w"
 
 import logging
@@ -41,7 +42,6 @@ class Scan(KnockKnockPlugin):
 
         # scan/parse all rc files
         for rc_script in RC_SCRIPTS:
-
             # get all commands in script file
             # ->note, commands in functions will be ignored...
             #   of course, if the function is invoked, this invocation will be displayed
@@ -50,7 +50,6 @@ class Scan(KnockKnockPlugin):
             # iterate over all commands
             # ->instantiate command obj and save into results
             for extracted_command in commands:
-
                 # instantiate and save
                 results["items"].append(command.Command(extracted_command, rc_script))
 

@@ -7,6 +7,7 @@ unclassified items
     this plugin dumps the process list and attempts to list all binaries that are
     running, apparently automatically so..
 """
+
 __author__ = "patrick w"
 
 import logging
@@ -53,20 +54,17 @@ class Scan(KnockKnockPlugin):
 
         # save all non-dock procs
         for process in non_dock_procs.values():
-
             # extract path
             path = process["path"]
 
             # ignore dups
             if path in reported_paths:
-
                 # skip
                 continue
 
             # ignore things in /opt/X11/
             # ->owned by r00t, so this should be ok....
             if path.startswith("/opt/X11/"):
-
                 # skip
                 continue
 
@@ -90,7 +88,6 @@ class Scan(KnockKnockPlugin):
         # iterate over all processes
         # ->will check time
         for pid, process in processes.items():
-
             # skip those that don't have parents
             if process["gpid"] not in processes:
                 # skip
@@ -104,7 +101,6 @@ class Scan(KnockKnockPlugin):
                 utils.PROCESS_TYPE_BG == process["type"]
                 and utils.PROCESS_TYPE_BG == parent["type"]
             ):
-
                 # yups, save it
                 non_dock_procs[pid] = process
 

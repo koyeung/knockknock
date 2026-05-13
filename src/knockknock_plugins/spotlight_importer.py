@@ -7,6 +7,7 @@ spotlight importer
     'plugin' directories
 
 """
+
 __author__ = "patrick w"
 
 import glob
@@ -47,7 +48,6 @@ class Scan(KnockKnockPlugin):
 
         # get all files in importer directories
         for importer_dir in IMPORTERS_DIRECTORIES:
-
             LOGGER.info("scanning %s", importer_dir)
 
             # get imports
@@ -56,17 +56,14 @@ class Scan(KnockKnockPlugin):
         # process
         # ->gets bundle's binary, then create file object and add to results
         for importer_bundle in importers:
-
             # skip any non-bundles
             # ->just do a directory check
             if not os.path.isdir(importer_bundle):
-
                 # skip
                 continue
 
             # skip any invalid bundles
             if not utils.get_binary_from_bundle(importer_bundle):
-
                 # skip
                 continue
 

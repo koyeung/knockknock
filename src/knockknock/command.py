@@ -33,7 +33,6 @@ class Command:
         """Normal output."""
         # when cmd has file
         if self.file:
-
             # init
             return f"""
 {self.command}

@@ -26,7 +26,6 @@ class File:
         # if its a directory (e.g. an app bundle)
         # ->get binary (from app's Info.plist)
         if os.path.isdir(path):
-
             # save bundle path
             self.bundle = path
 
@@ -36,14 +35,12 @@ class File:
             # if binary could not be found
             # ->default to 'unknown'
             if not self.path:
-
                 # just set to something...
                 self.path = "<unknown>"
 
         # path is to file
         # ->just save into class var
         else:
-
             # save
             self.path = path
 
@@ -64,7 +61,6 @@ class File:
         # ->path is key
         whitelisted_files = whitelist.get_file_whitelist()
         if self.path in whitelisted_files:
-
             # check if hash is in white list
             self.is_whitelisted = self.hash in whitelisted_files[self.path]
 
@@ -89,32 +85,27 @@ class File:
         # handle case where hash was unable to be generated
         # ->file wasn't found/couldn't be accessed
         if not self.hash:
-
             # set some default
             self.hash = "unknown"
 
         # handle when file is signed
         if self.signature_status == 0:
-
             # certificate info
             signed_msg = "yes"
 
             # add signing auth's
             if len(self.signing_authorities):
-
                 # add
                 signed_msg += f" ({self.signing_authorities})"
 
         # handle when file is not signed
         elif self.signature_status:
-
             # no
             signed_msg = f"no ({self.signature_status})"
 
         # error case
         # ->couldn't check signature
         else:
-
             # unknown
             signed_msg = "unknown"
 
@@ -150,7 +141,6 @@ class File:
         # ->this avoids issue with where errSecCSInfoPlistFailed is returned
         # when the kext's binary is checked
         if self.bundle and utils.is_kext(self.bundle):
-
             # set path to bundle
             path = self.bundle
 
@@ -164,7 +154,6 @@ class File:
         # on success
         # ->save into class var
         if status == 0:
-
             # save sig status
             self.signature_status = signing_info["status"]
 

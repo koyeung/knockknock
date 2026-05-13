@@ -3,6 +3,7 @@
 this plugin parses the undocumented contents of all users' com.apple.loginitems.plist to find
 login items
 """
+
 __author__ = "patrick w"
 
 import logging
@@ -40,7 +41,6 @@ class Scan(KnockKnockPlugin):
         # process
         # ->open file and read each line
         for user_login_items in utils.expand_path(LOGIN_ITEM_FILE):
-
             LOGGER.info("scanning %s", user_login_items)
 
             # load plist and check
@@ -54,7 +54,6 @@ class Scan(KnockKnockPlugin):
 
             # iterate over all login items
             for custom_list_item in custom_list_items:
-
                 # extract alias data
                 alias_data = list((custom_list_item["Alias"]).bytes())
 
@@ -82,7 +81,6 @@ class Scan(KnockKnockPlugin):
         # scan thru binary data
         # look for size:str that's a file
         for i, data in enumerate(alias_data):
-
             # extract size
             size = ord(data)
 
