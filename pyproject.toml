@@ -28,7 +28,6 @@ dev = [
 
 [tool.uv]
 exclude-newer = "1 week"
-exclude-newer-package = { urllib3 = "3 days" }
 
 [tool.mypy]
 ignore_missing_imports = true
